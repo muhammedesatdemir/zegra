@@ -9,6 +9,7 @@
 import { View, Text, StyleSheet, ScrollView, Pressable, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../context';
+import { getEffectiveShiftTime } from '../../utils/shiftTime';
 import type { PlannedDay, ShiftType } from '../../types';
 
 interface DayPreview {
@@ -44,6 +45,8 @@ export function UpcomingDays({ days }: UpcomingDaysProps) {
           const bgColor = item.shiftType?.color ?? (isDark ? '#4B5563' : '#E5E7EB');
           const hasNote = item.plannedDay?.note;
           const isLocked = item.plannedDay?.isLocked;
+          const effectiveTime = getEffectiveShiftTime(item.plannedDay, item.shiftType);
+          const hasCustomTime = effectiveTime.isCustom;
           const textColor = hasShift ? '#fff' : (isDark ? '#D1D5DB' : '#374151');
           const mutedColor = hasShift ? 'rgba(255,255,255,0.75)' : (isDark ? '#9CA3AF' : '#6B7280');
 
@@ -89,12 +92,17 @@ export function UpcomingDays({ days }: UpcomingDaysProps) {
                 {item.shiftType?.shortName ?? '—'}
               </Text>
 
-              {/* Bottom Indicator: Subtle bar for note, icon for lock */}
+              {/* Bottom Indicator: note bar, custom time dot, or lock */}
               <View style={styles.indicatorContainer}>
                 {hasNote ? (
                   <View style={[
                     styles.noteBar,
                     { backgroundColor: hasShift ? 'rgba(255,255,255,0.4)' : colors.primary }
+                  ]} />
+                ) : hasCustomTime ? (
+                  <View style={[
+                    styles.customDot,
+                    { backgroundColor: hasShift ? 'rgba(255,255,255,0.5)' : colors.primary }
                   ]} />
                 ) : isLocked ? (
                   <Text style={styles.lockIcon}>🔒</Text>

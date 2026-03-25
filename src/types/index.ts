@@ -46,6 +46,8 @@ export interface PlannedDay {
   templateId: string | null; // which template generated this
   note: string | null;       // user note
   cycleIndex?: number;       // position in template cycle (0 to cycleLength-1), used for continuity
+  customStartTime?: string;  // "08:00" - overrides shift's default start time for THIS day only
+  customEndTime?: string;    // "16:00" - overrides shift's default end time for THIS day only
 }
 
 // ============================================

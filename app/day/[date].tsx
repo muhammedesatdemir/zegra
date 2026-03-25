@@ -1,15 +1,25 @@
 /**
  * Day Edit Screen
  *
- * Edit a single day's shift.
- * Modal presentation for quick editing.
+ * Edit a single day's shift, time, note, and protection status.
+ * Premium, user-friendly design with clear Turkish language.
  */
 
-import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput } from 'react-native';
+import { useState, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  TextInput,
+  Platform,
+  KeyboardAvoidingView,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useScheduleStore } from '../../src/stores';
 import { formatDateTR, parseISODate } from '../../src/utils/date';
+import { normalizeCustomTime } from '../../src/utils/shiftTime';
 import { useTheme } from '../../src/context';
 import type { PlannedDay } from '../../src/types';
 
@@ -20,51 +30,50 @@ export default function DayEditScreen() {
 
   const plannedDays = useScheduleStore((state) => state.plannedDays);
   const shiftTypes = useScheduleStore((state) => state.shiftTypes);
-  const settings = useScheduleStore((state) => state.settings);
   const setPlannedDay = useScheduleStore((state) => state.setPlannedDay);
   const deleteDay = useScheduleStore((state) => state.deleteDay);
 
   const existingDay = date ? plannedDays[date] : null;
 
+  // Form state
   const [selectedShiftCode, setSelectedShiftCode] = useState<string | null>(
     existingDay?.shiftCode ?? null
   );
-  const [isLocked, setIsLocked] = useState(existingDay?.isLocked ?? false);
+  const [isProtected, setIsProtected] = useState(existingDay?.isLocked ?? false);
   const [note, setNote] = useState(existingDay?.note ?? '');
-  const [showNote, setShowNote] = useState(!!existingDay?.note);
+  const [customStartTime, setCustomStartTime] = useState(existingDay?.customStartTime ?? '');
+  const [customEndTime, setCustomEndTime] = useState(existingDay?.customEndTime ?? '');
 
-  const dynamicStyles = {
-    container: { backgroundColor: colors.background },
-    dateText: { color: colors.text },
-    currentInfo: { backgroundColor: colors.surface },
-    currentLabel: { color: colors.textMuted },
-    currentValue: { color: colors.text },
-    sourceText: { color: colors.textMuted },
-    sectionTitle: { color: colors.textMuted },
-    lockRow: { backgroundColor: colors.surface },
-    lockLabel: { color: colors.text },
-    lockHint: { color: colors.textMuted },
-    noteInput: { backgroundColor: colors.surface, color: colors.text },
-    cancelButton: { backgroundColor: colors.surface, borderColor: colors.border },
-    cancelButtonText: { color: colors.textMuted },
-  };
+  // Get selected shift type details
+  const selectedShiftType = useMemo(() => {
+    return shiftTypes.find((st) => st.code === selectedShiftCode) ?? null;
+  }, [shiftTypes, selectedShiftCode]);
+
+  // Filter shift types - only show single OFF option
+  const visibleShiftTypes = useMemo(() => {
+    return shiftTypes.filter((st) => !['OFF1', 'OFF2'].includes(st.code));
+  }, [shiftTypes]);
+
+  // Parse date for display
+  const dateObj = date ? parseISODate(date) : new Date();
+  const formattedDate = date ? formatDateTR(dateObj) : '';
+  const dayName = new Intl.DateTimeFormat('tr-TR', { weekday: 'long' }).format(dateObj);
+
+  // Get existing shift type for summary
+  const existingShiftType = existingDay
+    ? shiftTypes.find((st) => st.code === existingDay.shiftCode)
+    : null;
 
   if (!date) {
     return (
-      <View style={[styles.container, dynamicStyles.container]}>
-        <Text style={{ color: colors.text }}>Geçersiz tarih</Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Text style={[styles.errorText, { color: colors.text }]}>Geçersiz tarih</Text>
       </View>
     );
   }
 
-  // Filter shift types - only show single OFF option (simpler UX)
-  const visibleShiftTypes = shiftTypes.filter(
-    (st) => !['OFF1', 'OFF2'].includes(st.code)
-  );
-
   const handleSave = () => {
     if (!selectedShiftCode) {
-      // If no shift selected and there's an existing day, delete it
       if (existingDay) {
         deleteDay(date);
       }
@@ -72,301 +81,630 @@ export default function DayEditScreen() {
       return;
     }
 
+    // Normalize custom times - don't store if same as default
+    const normalizedStart = normalizeCustomTime(
+      customStartTime.trim(),
+      selectedShiftType?.startTime ?? null
+    );
+    const normalizedEnd = normalizeCustomTime(
+      customEndTime.trim(),
+      selectedShiftType?.endTime ?? null
+    );
+
     const newDay: PlannedDay = {
       date,
       shiftCode: selectedShiftCode,
-      isLocked,
+      isLocked: isProtected,
       source: 'manual',
       templateId: null,
       note: note.trim() || null,
+      customStartTime: normalizedStart,
+      customEndTime: normalizedEnd,
     };
 
     setPlannedDay(newDay);
     router.back();
   };
 
-  const handleDelete = () => {
+  const handleClear = () => {
     deleteDay(date);
     router.back();
   };
 
-  const selectedShiftType = shiftTypes.find(
-    (st) => st.code === selectedShiftCode
-  );
+  const handleShiftSelect = (code: string) => {
+    setSelectedShiftCode(code);
+    // Reset custom times when changing shift
+    setCustomStartTime('');
+    setCustomEndTime('');
+  };
 
   return (
-    <ScrollView style={[styles.container, dynamicStyles.container]}>
-      {/* Date Header */}
-      <Text style={[styles.dateText, dynamicStyles.dateText]}>{formatDateTR(parseISODate(date))}</Text>
-
-      {/* Current Shift Info */}
-      {existingDay && (
-        <View style={[styles.currentInfo, dynamicStyles.currentInfo]}>
-          <Text style={[styles.currentLabel, dynamicStyles.currentLabel]}>Mevcut:</Text>
-          <Text style={[styles.currentValue, dynamicStyles.currentValue]}>
-            {shiftTypes.find((st) => st.code === existingDay.shiftCode)?.name ??
-              existingDay.shiftCode}
-          </Text>
-          {existingDay.source !== 'manual' && (
-            <Text style={[styles.sourceText, dynamicStyles.sourceText]}>
-              ({existingDay.source === 'generated' ? 'Şablondan' : 'Revize edilmiş'})
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Day Summary Card */}
+        <View style={[styles.summaryCard, { backgroundColor: colors.surface }]}>
+          <View style={styles.summaryMain}>
+            <Text style={[styles.summaryDate, { color: colors.text }]}>
+              {formattedDate}
             </Text>
+            <Text style={[styles.summaryDay, { color: colors.textSecondary }]}>
+              {dayName}
+            </Text>
+          </View>
+          {existingShiftType && (
+            <View style={[styles.summaryBadge, { backgroundColor: existingShiftType.color }]}>
+              <Text style={styles.summaryBadgeText}>{existingShiftType.name}</Text>
+            </View>
+          )}
+          {existingDay?.isLocked && (
+            <Text style={styles.summaryProtectedIcon}>🛡️</Text>
           )}
         </View>
-      )}
 
-      {/* Shift Selection */}
-      <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Vardiya Seçin</Text>
-      <View style={styles.shiftGrid}>
-        {visibleShiftTypes.map((st) => (
-          <Pressable
-            key={st.id}
-            style={[
-              styles.shiftButton,
-              { backgroundColor: st.color },
-              selectedShiftCode === st.code && styles.shiftButtonSelected,
-            ]}
-            onPress={() => setSelectedShiftCode(st.code)}
-          >
-            <Text style={styles.shiftButtonName}>{st.name}</Text>
-            {st.startTime && st.endTime && (
-              <Text style={styles.shiftButtonTime}>
-                {st.startTime} - {st.endTime}
+        {/* Shift Selection */}
+        <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+          Vardiya Seçin
+        </Text>
+        <View style={styles.shiftGrid}>
+          {visibleShiftTypes.map((st) => {
+            const isSelected = selectedShiftCode === st.code;
+            return (
+              <Pressable
+                key={st.id}
+                style={({ pressed }) => [
+                  styles.shiftCard,
+                  { backgroundColor: st.color },
+                  isSelected && styles.shiftCardSelected,
+                  pressed && styles.shiftCardPressed,
+                ]}
+                onPress={() => handleShiftSelect(st.code)}
+              >
+                <View style={styles.shiftCardContent}>
+                  <Text style={styles.shiftName}>{st.name}</Text>
+                  {st.startTime && st.endTime && (
+                    <Text style={styles.shiftTime}>
+                      {st.startTime} – {st.endTime}
+                    </Text>
+                  )}
+                  {!st.isWorking && (
+                    <Text style={styles.shiftOffLabel}>İzin günü</Text>
+                  )}
+                </View>
+                {isSelected && (
+                  <View style={styles.checkContainer}>
+                    <Text style={styles.checkIcon}>✓</Text>
+                  </View>
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* Time Editor - Only for working shifts */}
+        {selectedShiftType?.isWorking && (
+          <View style={[styles.timeSection, { backgroundColor: colors.surface }]}>
+            <View style={styles.timeSectionHeader}>
+              <Text style={[styles.timeSectionTitle, { color: colors.text }]}>
+                Bu Güne Özel Saat
               </Text>
+              <Text style={[styles.timeSectionHint, { color: colors.textMuted }]}>
+                Sadece bu gün için geçerli
+              </Text>
+            </View>
+            <View style={styles.timeInputs}>
+              <View style={styles.timeInputGroup}>
+                <Text style={[styles.timeLabel, { color: colors.textSecondary }]}>
+                  Başlangıç
+                </Text>
+                <TextInput
+                  style={[
+                    styles.timeInput,
+                    { backgroundColor: colors.surfaceSecondary, color: colors.text },
+                  ]}
+                  value={customStartTime}
+                  onChangeText={setCustomStartTime}
+                  placeholder={selectedShiftType.startTime ?? '00:00'}
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="numbers-and-punctuation"
+                  maxLength={5}
+                />
+              </View>
+              <Text style={[styles.timeSeparator, { color: colors.textMuted }]}>–</Text>
+              <View style={styles.timeInputGroup}>
+                <Text style={[styles.timeLabel, { color: colors.textSecondary }]}>
+                  Bitiş
+                </Text>
+                <TextInput
+                  style={[
+                    styles.timeInput,
+                    { backgroundColor: colors.surfaceSecondary, color: colors.text },
+                  ]}
+                  value={customEndTime}
+                  onChangeText={setCustomEndTime}
+                  placeholder={selectedShiftType.endTime ?? '00:00'}
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="numbers-and-punctuation"
+                  maxLength={5}
+                />
+              </View>
+            </View>
+            {(customStartTime || customEndTime) && (
+              <Pressable
+                style={styles.resetTimesButton}
+                onPress={() => {
+                  setCustomStartTime('');
+                  setCustomEndTime('');
+                }}
+              >
+                <Text style={[styles.resetTimesText, { color: colors.primary }]}>
+                  Varsayılana döndür
+                </Text>
+              </Pressable>
             )}
-            {selectedShiftCode === st.code && (
-              <Text style={styles.checkmark}>✓</Text>
-            )}
-          </Pressable>
-        ))}
-      </View>
+          </View>
+        )}
 
-      {/* Lock Toggle */}
-      <Pressable
-        style={[styles.lockRow, dynamicStyles.lockRow]}
-        onPress={() => setIsLocked(!isLocked)}
-      >
-        <View style={styles.lockInfo}>
-          <Text style={[styles.lockLabel, dynamicStyles.lockLabel]}>Bu günü kilitle</Text>
-          <Text style={[styles.lockHint, dynamicStyles.lockHint]}>
-            Kilitli günler otomatik işlemlerden korunur
+        {/* Protection Toggle */}
+        <Pressable
+          style={[styles.protectRow, { backgroundColor: colors.surface }]}
+          onPress={() => setIsProtected(!isProtected)}
+        >
+          <View style={styles.protectInfo}>
+            <View style={styles.protectHeader}>
+              <Text style={styles.protectIcon}>🛡️</Text>
+              <Text style={[styles.protectLabel, { color: colors.text }]}>
+                Bu Günü Koru
+              </Text>
+            </View>
+            <Text style={[styles.protectHint, { color: colors.textMuted }]}>
+              Plan oluştururken bu gün otomatik değişmesin
+            </Text>
+          </View>
+          <View style={[styles.toggle, isProtected && styles.toggleActive]}>
+            <View style={[styles.toggleKnob, isProtected && styles.toggleKnobActive]} />
+          </View>
+        </Pressable>
+
+        {/* Note Section */}
+        <View style={[styles.noteSection, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.noteSectionTitle, { color: colors.text }]}>
+            📝 Not
+          </Text>
+          <TextInput
+            style={[
+              styles.noteInput,
+              { backgroundColor: colors.surfaceSecondary, color: colors.text },
+            ]}
+            value={note}
+            onChangeText={setNote}
+            placeholder="Bugüne özel not ekle..."
+            placeholderTextColor={colors.textMuted}
+            multiline
+            numberOfLines={3}
+            textAlignVertical="top"
+          />
+          <Text style={[styles.noteHint, { color: colors.textMuted }]}>
+            Örn: İzin değişti, nöbet kaydırıldı...
           </Text>
         </View>
-        <View style={[styles.toggle, isLocked && styles.toggleActive]}>
-          <View
-            style={[styles.toggleKnob, isLocked && styles.toggleKnobActive]}
-          />
+
+        {/* Actions */}
+        <View style={styles.actions}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.cancelButton,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+              pressed && styles.buttonPressed,
+            ]}
+            onPress={() => router.back()}
+          >
+            <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>
+              İptal
+            </Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [
+              styles.saveButton,
+              pressed && styles.buttonPressed,
+            ]}
+            onPress={handleSave}
+          >
+            <Text style={styles.saveButtonText}>Kaydet</Text>
+          </Pressable>
         </View>
-      </Pressable>
 
-      {/* Note Section */}
-      <Pressable
-        style={styles.noteToggle}
-        onPress={() => setShowNote(!showNote)}
-      >
-        <Text style={styles.noteToggleText}>
-          {showNote ? '▼ Not' : '▶ Not ekle'}
-        </Text>
-      </Pressable>
+        {/* Clear Day Option */}
+        {existingDay && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.clearButton,
+              pressed && { opacity: 0.7 },
+            ]}
+            onPress={handleClear}
+          >
+            <Text style={styles.clearButtonText}>Günü Temizle</Text>
+          </Pressable>
+        )}
 
-      {showNote && (
-        <TextInput
-          style={[styles.noteInput, dynamicStyles.noteInput]}
-          value={note}
-          onChangeText={setNote}
-          placeholder="Not yazın..."
-          placeholderTextColor={colors.textMuted}
-          multiline
-          numberOfLines={3}
-        />
-      )}
-
-      {/* Actions */}
-      <View style={styles.actions}>
-        <Pressable style={[styles.cancelButton, dynamicStyles.cancelButton]} onPress={() => router.back()}>
-          <Text style={[styles.cancelButtonText, dynamicStyles.cancelButtonText]}>İptal</Text>
-        </Pressable>
-        <Pressable style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Kaydet</Text>
-        </Pressable>
-      </View>
-
-      {existingDay && (
-        <Pressable style={styles.deleteButton} onPress={handleDelete}>
-          <Text style={styles.deleteButtonText}>Bu Günü Sil</Text>
-        </Pressable>
-      )}
-    </ScrollView>
+        {/* Bottom spacing */}
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
   container: {
     flex: 1,
+  },
+  content: {
     padding: 16,
   },
-  dateText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1F2937',
+  errorText: {
+    fontSize: 16,
     textAlign: 'center',
-    marginBottom: 16,
+    marginTop: 50,
   },
-  currentInfo: {
+
+  // Summary Card
+  summaryCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 24,
-    padding: 12,
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  currentLabel: {
+  summaryMain: {
+    flex: 1,
+  },
+  summaryDate: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 2,
+    ...Platform.select({
+      ios: { fontFamily: 'System' },
+      android: { fontFamily: 'sans-serif-medium' },
+    }),
+  },
+  summaryDay: {
     fontSize: 14,
-    color: '#6B7280',
+    fontWeight: '500',
+    textTransform: 'capitalize',
   },
-  currentValue: {
-    fontSize: 16,
+  summaryBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  summaryBadgeText: {
+    fontSize: 13,
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#fff',
   },
-  sourceText: {
-    fontSize: 12,
-    color: '#9CA3AF',
+  summaryProtectedIcon: {
+    fontSize: 18,
   },
+
+  // Section Title
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#6B7280',
     marginBottom: 12,
+    marginLeft: 4,
+    ...Platform.select({
+      ios: { fontFamily: 'System' },
+      android: { fontFamily: 'sans-serif-medium' },
+    }),
   },
+
+  // Shift Grid
   shiftGrid: {
-    gap: 8,
-    marginBottom: 24,
+    gap: 10,
+    marginBottom: 20,
   },
-  shiftButton: {
-    padding: 16,
-    borderRadius: 12,
+  shiftCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    padding: 16,
+    borderRadius: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  shiftButtonSelected: {
+  shiftCardSelected: {
     borderWidth: 3,
-    borderColor: '#1F2937',
+    borderColor: 'rgba(255,255,255,0.9)',
+    shadowOpacity: 0.2,
+    elevation: 5,
   },
-  shiftButtonName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  shiftButtonTime: {
-    fontSize: 14,
-    color: '#fff',
+  shiftCardPressed: {
+    transform: [{ scale: 0.98 }],
     opacity: 0.9,
   },
-  checkmark: {
-    fontSize: 24,
+  shiftCardContent: {
+    flex: 1,
+  },
+  shiftName: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 2,
+    ...Platform.select({
+      ios: { fontFamily: 'System' },
+      android: { fontFamily: 'sans-serif-medium' },
+    }),
+  },
+  shiftTime: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '500',
+  },
+  shiftOffLabel: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.8)',
+    fontWeight: '500',
+  },
+  checkContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkIcon: {
+    fontSize: 16,
     color: '#fff',
     fontWeight: 'bold',
   },
-  lockRow: {
+
+  // Time Section
+  timeSection: {
+    padding: 16,
+    borderRadius: 14,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  timeSectionHeader: {
+    marginBottom: 12,
+  },
+  timeSectionTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 2,
+    ...Platform.select({
+      ios: { fontFamily: 'System' },
+      android: { fontFamily: 'sans-serif-medium' },
+    }),
+  },
+  timeSectionHint: {
+    fontSize: 12,
+  },
+  timeInputs: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
+    gap: 12,
   },
-  lockInfo: {
+  timeInputGroup: {
     flex: 1,
   },
-  lockLabel: {
-    fontSize: 16,
+  timeLabel: {
+    fontSize: 12,
     fontWeight: '500',
-    color: '#1F2937',
+    marginBottom: 6,
   },
-  lockHint: {
+  timeInput: {
+    padding: 12,
+    borderRadius: 10,
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+    ...Platform.select({
+      ios: { fontFamily: 'System' },
+      android: { fontFamily: 'sans-serif-medium' },
+    }),
+  },
+  timeSeparator: {
+    fontSize: 18,
+    fontWeight: '500',
+    marginTop: 18,
+  },
+  resetTimesButton: {
+    marginTop: 10,
+    alignSelf: 'flex-start',
+  },
+  resetTimesText: {
     fontSize: 13,
-    color: '#6B7280',
-    marginTop: 2,
+    fontWeight: '500',
+  },
+
+  // Protection Toggle
+  protectRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 14,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  protectInfo: {
+    flex: 1,
+  },
+  protectHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
+  protectIcon: {
+    fontSize: 16,
+  },
+  protectLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    ...Platform.select({
+      ios: { fontFamily: 'System' },
+      android: { fontFamily: 'sans-serif-medium' },
+    }),
+  },
+  protectHint: {
+    fontSize: 12,
+    marginLeft: 22,
   },
   toggle: {
-    width: 50,
-    height: 30,
+    width: 52,
+    height: 32,
     backgroundColor: '#E5E7EB',
-    borderRadius: 15,
+    borderRadius: 16,
     padding: 2,
+    justifyContent: 'center',
   },
   toggleActive: {
     backgroundColor: '#3B82F6',
   },
   toggleKnob: {
-    width: 26,
-    height: 26,
+    width: 28,
+    height: 28,
     backgroundColor: '#fff',
-    borderRadius: 13,
+    borderRadius: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
   },
   toggleKnobActive: {
     transform: [{ translateX: 20 }],
   },
-  noteToggle: {
-    padding: 12,
-    marginBottom: 8,
+
+  // Note Section
+  noteSection: {
+    padding: 16,
+    borderRadius: 14,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  noteToggleText: {
-    fontSize: 14,
-    color: '#3B82F6',
-    fontWeight: '500',
+  noteSectionTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 10,
+    ...Platform.select({
+      ios: { fontFamily: 'System' },
+      android: { fontFamily: 'sans-serif-medium' },
+    }),
   },
   noteInput: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
     padding: 12,
-    fontSize: 16,
+    borderRadius: 10,
+    fontSize: 15,
     minHeight: 80,
-    textAlignVertical: 'top',
-    marginBottom: 24,
+    ...Platform.select({
+      ios: { fontFamily: 'System' },
+      android: { fontFamily: 'sans-serif' },
+    }),
   },
+  noteHint: {
+    fontSize: 11,
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+
+  // Actions
   actions: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   cancelButton: {
     flex: 1,
     padding: 16,
-    borderRadius: 12,
-    backgroundColor: '#fff',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#6B7280',
+    ...Platform.select({
+      ios: { fontFamily: 'System' },
+      android: { fontFamily: 'sans-serif-medium' },
+    }),
   },
   saveButton: {
-    flex: 1,
+    flex: 1.2,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     backgroundColor: '#3B82F6',
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   saveButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#fff',
+    ...Platform.select({
+      ios: { fontFamily: 'System' },
+      android: { fontFamily: 'sans-serif-medium' },
+    }),
   },
-  deleteButton: {
-    padding: 16,
+  buttonPressed: {
+    transform: [{ scale: 0.97 }],
+    opacity: 0.9,
+  },
+
+  // Clear Button
+  clearButton: {
+    padding: 14,
     alignItems: 'center',
   },
-  deleteButtonText: {
+  clearButtonText: {
     fontSize: 14,
+    fontWeight: '500',
     color: '#EF4444',
+    ...Platform.select({
+      ios: { fontFamily: 'System' },
+      android: { fontFamily: 'sans-serif' },
+    }),
+  },
+
+  // Bottom Spacer
+  bottomSpacer: {
+    height: 20,
   },
 });

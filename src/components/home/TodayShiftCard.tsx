@@ -9,6 +9,7 @@
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../context';
+import { getEffectiveShiftTime } from '../../utils/shiftTime';
 import type { PlannedDay, ShiftType } from '../../types';
 
 interface NextShiftInfo {
@@ -40,7 +41,9 @@ export function TodayShiftCard({
   const hasShift = plannedDay && shiftType;
   const hasNote = plannedDay?.note;
   const isLocked = plannedDay?.isLocked;
-  const isOff = hasShift && !shiftType.isWorking;
+
+  // Get effective times (custom or default)
+  const effectiveTime = getEffectiveShiftTime(plannedDay, shiftType);
 
   // Background color based on shift
   const bgColor = shiftType?.color ?? (isDark ? '#4B5563' : '#9CA3AF');
@@ -82,11 +85,16 @@ export function TodayShiftCard({
         <View style={styles.content}>
           <Text style={styles.shiftName}>{shiftType.name}</Text>
 
-          {shiftType.isWorking && shiftType.startTime && shiftType.endTime ? (
+          {shiftType.isWorking && effectiveTime.startTime && effectiveTime.endTime ? (
             <View style={styles.timeContainer}>
               <Text style={styles.timeText}>
-                {shiftType.startTime} – {shiftType.endTime}
+                {effectiveTime.startTime} – {effectiveTime.endTime}
               </Text>
+              {effectiveTime.isCustom && (
+                <View style={styles.customBadge}>
+                  <Text style={styles.customBadgeText}>özel</Text>
+                </View>
+              )}
               {shiftType.isOvernight && (
                 <Text style={styles.overnightHint}>(ertesi gün)</Text>
               )}
@@ -245,6 +253,17 @@ const styles = StyleSheet.create({
   overnightHint: {
     fontSize: 12,
     color: 'rgba(255,255,255,0.7)',
+  },
+  customBadge: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  customBadgeText: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '600',
   },
   statusText: {
     fontSize: 15,
