@@ -1,11 +1,12 @@
 /**
  * CalendarActions Component
  *
- * Bottom action area with single "Ay Olustur" button.
- * Minimal, clean design that doesn't dominate the screen.
+ * Bottom action area - integrated with calendar, not a separate block.
+ * Single "Ay Olustur" button with subtle, modern design.
  */
 
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context';
 
 interface CalendarActionsProps {
@@ -14,9 +15,18 @@ interface CalendarActionsProps {
 
 export function CalendarActions({ onGenerate }: CalendarActionsProps) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.background,
+          paddingBottom: Math.max(insets.bottom, 12),
+        },
+      ]}
+    >
       <Pressable
         style={({ pressed }) => [
           styles.button,
@@ -24,19 +34,12 @@ export function CalendarActions({ onGenerate }: CalendarActionsProps) {
         ]}
         onPress={onGenerate}
       >
-        {/* Icon */}
+        {/* Plus Icon */}
         <View style={styles.iconContainer}>
-          <View style={styles.calendarIcon}>
-            <View style={styles.calendarTop} />
-            <View style={styles.calendarBody}>
-              <View style={styles.calendarDot} />
-              <View style={styles.calendarDot} />
-              <View style={styles.calendarDot} />
-              <View style={styles.calendarDot} />
-            </View>
-          </View>
+          <View style={styles.plusHorizontal} />
+          <View style={styles.plusVertical} />
         </View>
-        <Text style={styles.buttonText}>Ay Olustur</Text>
+        <Text style={styles.buttonText}>Ay Oluştur</Text>
       </Pressable>
     </View>
   );
@@ -44,59 +47,46 @@ export function CalendarActions({ onGenerate }: CalendarActionsProps) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    paddingBottom: 16,
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#3B82F6',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
+    paddingVertical: 15,
+    paddingHorizontal: 28,
     borderRadius: 14,
     gap: 10,
     shadowColor: '#3B82F6',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
     elevation: 4,
   },
   buttonPressed: {
     transform: [{ scale: 0.98 }],
     opacity: 0.9,
+    shadowOpacity: 0.15,
   },
   iconContainer: {
-    width: 20,
-    height: 20,
+    width: 18,
+    height: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  calendarIcon: {
-    width: 16,
-    height: 14,
-  },
-  calendarTop: {
-    height: 3,
+  plusHorizontal: {
+    position: 'absolute',
+    width: 14,
+    height: 2.5,
     backgroundColor: '#fff',
-    borderTopLeftRadius: 2,
-    borderTopRightRadius: 2,
-    marginBottom: 1,
+    borderRadius: 1,
   },
-  calendarBody: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    borderBottomLeftRadius: 2,
-    borderBottomRightRadius: 2,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 1,
-    gap: 1,
-  },
-  calendarDot: {
-    width: 3,
-    height: 3,
+  plusVertical: {
+    position: 'absolute',
+    width: 2.5,
+    height: 14,
     backgroundColor: '#fff',
     borderRadius: 1,
   },
@@ -104,10 +94,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
-    letterSpacing: 0.3,
-    ...Platform.select({
-      ios: { fontFamily: 'System' },
-      android: { fontFamily: 'sans-serif-medium' },
-    }),
+    letterSpacing: 0.2,
   },
 });

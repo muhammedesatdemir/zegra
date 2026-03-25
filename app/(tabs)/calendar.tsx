@@ -101,8 +101,9 @@ export default function CalendarScreen() {
         onToday={goToToday}
       />
 
-      {/* Calendar Grid */}
+      {/* Calendar Grid - key ensures complete re-render on month change */}
       <CalendarGrid
+        key={`${viewYear}-${viewMonth}`}
         days={calendarDays}
         selectedDate={selectedDate}
         onDayPress={handleDayPress}

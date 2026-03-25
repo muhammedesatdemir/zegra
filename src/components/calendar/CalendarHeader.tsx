@@ -1,8 +1,8 @@
 /**
  * CalendarHeader Component
  *
- * Modern, clean header with month/year display and navigation.
- * Centered title with subtle arrow buttons.
+ * Clean, premium header with month/year and navigation.
+ * Native calendar feel with modern refinements.
  */
 
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
@@ -27,45 +27,47 @@ export function CalendarHeader({
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.surface }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Previous Month Button */}
       <Pressable
         style={({ pressed }) => [
           styles.navButton,
-          { backgroundColor: colors.surfaceSecondary },
           pressed && styles.navButtonPressed,
         ]}
         onPress={onPrevious}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <View style={styles.arrowLeft} />
+        <View style={[styles.arrowLeft, { borderColor: colors.primary || '#3B82F6' }]} />
       </Pressable>
 
-      {/* Month Title - Tap to go to today */}
+      {/* Month + Year Title */}
       <Pressable
         style={({ pressed }) => [
           styles.titleContainer,
-          pressed && { opacity: 0.7 },
+          pressed && { opacity: 0.6 },
         ]}
         onPress={onToday}
       >
         <Text style={[styles.monthText, { color: colors.text }]}>
           {getMonthNameTR(month)}
         </Text>
-        <Text style={[styles.yearText, { color: colors.textSecondary }]}>
-          {year}
-        </Text>
+        <View style={styles.yearBadge}>
+          <Text style={[styles.yearText, { color: colors.textSecondary }]}>
+            {year}
+          </Text>
+        </View>
       </Pressable>
 
       {/* Next Month Button */}
       <Pressable
         style={({ pressed }) => [
           styles.navButton,
-          { backgroundColor: colors.surfaceSecondary },
           pressed && styles.navButtonPressed,
         ]}
         onPress={onNext}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <View style={styles.arrowRight} />
+        <View style={[styles.arrowRight, { borderColor: colors.primary || '#3B82F6' }]} />
       </Pressable>
     </View>
   );
@@ -77,50 +79,61 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 16,
   },
   navButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   navButtonPressed: {
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
     transform: [{ scale: 0.95 }],
-    opacity: 0.8,
   },
   arrowLeft: {
-    width: 10,
-    height: 10,
+    width: 11,
+    height: 11,
     borderLeftWidth: 2.5,
     borderBottomWidth: 2.5,
-    borderColor: '#3B82F6',
+    borderRadius: 1,
     transform: [{ rotate: '45deg' }, { translateX: 2 }],
   },
   arrowRight: {
-    width: 10,
-    height: 10,
+    width: 11,
+    height: 11,
     borderRightWidth: 2.5,
     borderTopWidth: 2.5,
-    borderColor: '#3B82F6',
+    borderRadius: 1,
     transform: [{ rotate: '45deg' }, { translateX: -2 }],
   },
   titleContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: 8,
   },
   monthText: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
     ...Platform.select({
       ios: { fontFamily: 'System' },
       android: { fontFamily: 'sans-serif-medium' },
     }),
   },
+  yearBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    backgroundColor: 'rgba(0,0,0,0.04)',
+  },
   yearText: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '600',
+    ...Platform.select({
+      ios: { fontFamily: 'System' },
+      android: { fontFamily: 'sans-serif-medium' },
+    }),
   },
 });
