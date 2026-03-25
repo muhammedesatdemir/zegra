@@ -21,7 +21,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useScheduleStore } from '../../src/stores';
 import { useTheme } from '../../src/context';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 
 type ModalType = 'export' | 'delete' | null;
@@ -90,9 +90,7 @@ export default function SettingsScreen() {
       const fileName = `zegra-vardiya-${new Date().toISOString().split('T')[0]}.csv`;
       const filePath = `${FileSystem.cacheDirectory}${fileName}`;
 
-      await FileSystem.writeAsStringAsync(filePath, csvContent, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
+      await FileSystem.writeAsStringAsync(filePath, csvContent);
 
       setExportFilePath(filePath);
       setActiveModal('export');
