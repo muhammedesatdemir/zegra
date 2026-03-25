@@ -2,8 +2,7 @@
  * QuickActions
  *
  * Two main action buttons.
- * Clean, premium, Turkish character support.
- * No "Revize Et" - simplified to essential actions only.
+ * Taller cards, bigger icons, stronger block feel.
  */
 
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
@@ -40,7 +39,9 @@ export function QuickActions({ actions }: QuickActionsProps) {
             ]}
             onPress={action.onPress}
           >
-            <Text style={styles.icon}>{action.icon}</Text>
+            <View style={[styles.iconContainer, { backgroundColor: colors.primaryLight }]}>
+              <Text style={styles.icon}>{action.icon}</Text>
+            </View>
             <View style={styles.textContainer}>
               <Text style={[styles.label, { color: colors.text }]}>
                 {action.label}
@@ -60,7 +61,7 @@ export function QuickActions({ actions }: QuickActionsProps) {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginTop: 4,
   },
   sectionTitle: {
     fontSize: 14,
@@ -79,27 +80,35 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 14,
+    padding: 14,
+    paddingVertical: 16,
+    borderRadius: 16,
     gap: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   buttonPressed: {
     transform: [{ scale: 0.97 }],
     opacity: 0.9,
   },
+  iconContainer: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   icon: {
-    fontSize: 22,
+    fontSize: 20,
   },
   textContainer: {
     flex: 1,
   },
   label: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     ...Platform.select({
       ios: { fontFamily: 'System' },
@@ -108,7 +117,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 11,
-    marginTop: 1,
+    marginTop: 2,
     ...Platform.select({
       ios: { fontFamily: 'System' },
       android: { fontFamily: 'sans-serif' },

@@ -2,8 +2,8 @@
  * UpcomingDays
  *
  * Horizontal scrollable 7-day preview.
- * Clean badges inside cards, no overflow.
- * Better visual hierarchy, no icon conflicts.
+ * Today card scaled and elevated.
+ * Refined note indicator.
  */
 
 import { View, Text, StyleSheet, ScrollView, Pressable, Platform } from 'react-native';
@@ -59,7 +59,7 @@ export function UpcomingDays({ days }: UpcomingDaysProps) {
               ]}
               onPress={() => router.push(`/day/${item.date}`)}
             >
-              {/* Top Label: Bugün/Yarın - Inside card, no overflow */}
+              {/* Top Label: Bugün/Yarın - Inside card */}
               {(item.isToday || item.isTomorrow) ? (
                 <View style={[
                   styles.dayLabel,
@@ -76,7 +76,11 @@ export function UpcomingDays({ days }: UpcomingDaysProps) {
               )}
 
               {/* Day Number - Main focus */}
-              <Text style={[styles.dayNum, { color: textColor }]}>
+              <Text style={[
+                styles.dayNum,
+                { color: textColor },
+                item.isToday && styles.dayNumToday,
+              ]}>
                 {item.dayNum}
               </Text>
 
@@ -85,16 +89,19 @@ export function UpcomingDays({ days }: UpcomingDaysProps) {
                 {item.shiftType?.shortName ?? '—'}
               </Text>
 
-              {/* Bottom Indicator: Note or Lock (only one shown) */}
-              {hasNote ? (
-                <View style={styles.indicator}>
-                  <Text style={styles.indicatorDot}>•</Text>
-                </View>
-              ) : isLocked ? (
-                <View style={styles.indicator}>
-                  <Text style={styles.indicatorIcon}>🔒</Text>
-                </View>
-              ) : null}
+              {/* Bottom Indicator: Subtle bar for note, icon for lock */}
+              <View style={styles.indicatorContainer}>
+                {hasNote ? (
+                  <View style={[
+                    styles.noteBar,
+                    { backgroundColor: hasShift ? 'rgba(255,255,255,0.4)' : colors.primary }
+                  ]} />
+                ) : isLocked ? (
+                  <Text style={styles.lockIcon}>🔒</Text>
+                ) : (
+                  <View style={styles.indicatorSpacer} />
+                )}
+              </View>
             </Pressable>
           );
         })}
@@ -105,7 +112,7 @@ export function UpcomingDays({ days }: UpcomingDaysProps) {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 14,
@@ -118,49 +125,57 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingRight: 8,
-    gap: 8,
+    paddingVertical: 4,
+    gap: 10,
   },
   dayCard: {
-    width: 64,
-    height: 88,
+    width: 62,
+    height: 92,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
     paddingHorizontal: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
   dayCardToday: {
-    borderWidth: 2,
+    width: 68,
+    height: 98,
+    borderWidth: 2.5,
     borderColor: '#3B82F6',
+    shadowColor: '#3B82F6',
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
+    transform: [{ scale: 1.02 }],
   },
   dayCardTomorrow: {
     borderWidth: 1.5,
-    borderColor: 'rgba(59, 130, 246, 0.4)',
+    borderColor: 'rgba(59, 130, 246, 0.5)',
   },
   dayCardPressed: {
-    transform: [{ scale: 0.95 }],
+    transform: [{ scale: 0.94 }],
     opacity: 0.9,
   },
   dayLabel: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 5,
     marginBottom: 2,
   },
   dayLabelToday: {
     backgroundColor: '#3B82F6',
   },
   dayLabelTomorrow: {
-    backgroundColor: 'rgba(59, 130, 246, 0.7)',
+    backgroundColor: 'rgba(59, 130, 246, 0.75)',
   },
   dayLabelText: {
     fontSize: 9,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#fff',
     ...Platform.select({
       ios: { fontFamily: 'System' },
@@ -180,11 +195,14 @@ const styles = StyleSheet.create({
   dayNum: {
     fontSize: 20,
     fontWeight: '700',
-    marginVertical: 1,
+    marginVertical: 2,
     ...Platform.select({
       ios: { fontFamily: 'System' },
       android: { fontFamily: 'sans-serif-medium' },
     }),
+  },
+  dayNumToday: {
+    fontSize: 22,
   },
   shiftCode: {
     fontSize: 12,
@@ -194,18 +212,21 @@ const styles = StyleSheet.create({
       android: { fontFamily: 'sans-serif-medium' },
     }),
   },
-  indicator: {
+  indicatorContainer: {
     marginTop: 4,
-    height: 12,
+    height: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  indicatorDot: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
-    lineHeight: 12,
+  noteBar: {
+    width: 16,
+    height: 3,
+    borderRadius: 1.5,
   },
-  indicatorIcon: {
-    fontSize: 10,
+  lockIcon: {
+    fontSize: 9,
+  },
+  indicatorSpacer: {
+    height: 3,
   },
 });
