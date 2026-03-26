@@ -55,7 +55,12 @@ interface ScheduleState {
   generateMonth: (
     year: number,
     month: number,
-    options?: { preserveLocked?: boolean; preserveManual?: boolean; startDay?: number }
+    options?: {
+      preserveLocked?: boolean;
+      preserveManual?: boolean;
+      startDay?: number;
+      overridePhaseOffset?: number; // Dışarıdan phase offset belirtmek için (Yıl başından modu)
+    }
   ) => { generated: number; skipped: number };
 
   // Actions - Revision
@@ -175,7 +180,12 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
   // ============================================
 
   generateMonth: (year, month, options = {}) => {
-    const { preserveLocked = true, preserveManual = true, startDay = 1 } = options;
+    const {
+      preserveLocked = true,
+      preserveManual = true,
+      startDay = 1,
+      overridePhaseOffset, // Dışarıdan gelen phase offset (Yıl başından modu için)
+    } = options;
     const state = get();
     const repo = getRepository();
 
@@ -188,10 +198,13 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       return { generated: 0, skipped: 0 };
     }
 
-    // Calculate phase offset from previous day before start
-    // CRITICAL: Use cycleIndex for accurate continuity, not just shiftCode
+    // Calculate phase offset
     let phaseOffset = 0;
-    if (startDay > 1) {
+
+    // Eğer dışarıdan override geliyorsa, onu kullan (Yıl başından modu)
+    if (overridePhaseOffset !== undefined) {
+      phaseOffset = overridePhaseOffset;
+    } else if (startDay > 1) {
       // Look at the day before startDay to maintain continuity
       const prevDayStr = `${year}-${String(month).padStart(2, '0')}-${String(startDay - 1).padStart(2, '0')}`;
       const prevDay = state.plannedDays[prevDayStr];

@@ -12,9 +12,11 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
-  Alert,
   Platform,
+  Modal,
+  Dimensions,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useScheduleStore, selectActiveTemplate } from '../src/stores';
 import { getMonthNameTR } from '../src/utils/turkish';
@@ -24,6 +26,13 @@ import { isOffCode } from '../src/constants/shifts';
 
 type StartPoint = 'month_start' | 'today' | 'year_start';
 type RangePreset = 'this_month' | 'next_3_months' | 'next_6_months' | 'until_year_end';
+
+// Success modal state tipi
+interface SuccessModalState {
+  visible: boolean;
+  generated: number;
+  skipped: number;
+}
 
 // Şablon için kullanıcı dostu isim ve açıklama oluştur
 function getTemplateDisplayInfo(template: { name: string; steps: string[]; cycleLength: number }, shiftTypes: any[]) {
@@ -86,6 +95,190 @@ function getTemplateDisplayInfo(template: { name: string; steps: string[]; cycle
   };
 }
 
+/**
+ * Yılın 1 Ocak'ından belirli bir tarihe kadar geçen gün sayısını hesapla
+ * @param year Yıl
+ * @param month Ay (1-12)
+ * @param day Gün
+ * @returns Gün sayısı (0-indexed, 1 Ocak = 0)
+ */
+function getDayOfYear(year: number, month: number, day: number): number {
+  const date = new Date(year, month - 1, day);
+  const startOfYear = new Date(year, 0, 1);
+  const diff = date.getTime() - startOfYear.getTime();
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
+}
+
+// ============================================
+// SUCCESS MODAL COMPONENT
+// ============================================
+
+interface SuccessModalProps {
+  visible: boolean;
+  generated: number;
+  skipped: number;
+  onClose: () => void;
+}
+
+function SuccessModal({ visible, generated, skipped, onClose }: SuccessModalProps) {
+  const { colors } = useTheme();
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+    >
+      <View style={successModalStyles.overlay}>
+        <View style={[successModalStyles.container, { backgroundColor: colors.surface }]}>
+          {/* Success Icon */}
+          <View style={successModalStyles.iconContainer}>
+            <LinearGradient
+              colors={['#10B981', '#059669']}
+              style={successModalStyles.iconGradient}
+            >
+              <Text style={successModalStyles.iconText}>✓</Text>
+            </LinearGradient>
+          </View>
+
+          {/* Title */}
+          <Text style={[successModalStyles.title, { color: colors.text }]}>
+            Plan Hazır
+          </Text>
+
+          {/* Stats */}
+          <View style={successModalStyles.statsContainer}>
+            <View style={[successModalStyles.statBox, { backgroundColor: colors.surfaceSecondary }]}>
+              <Text style={[successModalStyles.statNumber, { color: colors.primary }]}>
+                {generated}
+              </Text>
+              <Text style={[successModalStyles.statLabel, { color: colors.textMuted }]}>
+                gün oluşturuldu
+              </Text>
+            </View>
+
+            {skipped > 0 && (
+              <View style={[successModalStyles.statBox, { backgroundColor: colors.surfaceSecondary }]}>
+                <Text style={[successModalStyles.statNumber, { color: '#F59E0B' }]}>
+                  {skipped}
+                </Text>
+                <Text style={[successModalStyles.statLabel, { color: colors.textMuted }]}>
+                  gün korundu
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Action Button */}
+          <Pressable
+            style={successModalStyles.button}
+            onPress={onClose}
+          >
+            <Text style={successModalStyles.buttonText}>Tamam</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const successModalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  container: {
+    width: '100%',
+    maxWidth: 320,
+    borderRadius: 24,
+    padding: 28,
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 24,
+      },
+      android: {
+        elevation: 12,
+      },
+    }),
+  },
+  iconContainer: {
+    marginBottom: 20,
+  },
+  iconGradient: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconText: {
+    color: '#FFFFFF',
+    fontSize: 32,
+    fontWeight: 'bold',
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 20,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 24,
+    width: '100%',
+  },
+  statBox: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: 28,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  button: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 14,
+    backgroundColor: '#3B82F6',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#3B82F6',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '600',
+  },
+});
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
+
 export default function GenerateScreen() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
@@ -107,6 +300,17 @@ export default function GenerateScreen() {
   const [rangePreset, setRangePreset] = useState<RangePreset>('this_month');
   const [preserveLocked, setPreserveLocked] = useState(true);
   const [preserveManual, setPreserveManual] = useState(true);
+
+  // Success modal state
+  const [successModal, setSuccessModal] = useState<SuccessModalState>({
+    visible: false,
+    generated: 0,
+    skipped: 0,
+  });
+
+  // Seçili template'in cycle length'i
+  const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
+  const cycleLength = selectedTemplate?.cycleLength ?? 8;
 
   // Calculate months based on range preset
   const selectedMonths = useMemo(() => {
@@ -149,12 +353,11 @@ export default function GenerateScreen() {
 
   const handleGenerate = () => {
     if (!selectedTemplateId) {
-      Alert.alert('Şablon Seçilmedi', 'Lütfen bir şablon seçin.');
+      // Simple alert for validation errors only
       return;
     }
 
     if (selectedMonths.length === 0) {
-      Alert.alert('Dönem Seçilmedi', 'Lütfen bir dönem seçin.');
       return;
     }
 
@@ -175,6 +378,7 @@ export default function GenerateScreen() {
     for (const { year, month } of sortedMonths) {
       // Determine start day based on startPoint
       let startDay = 1;
+      let overridePhaseOffset: number | undefined = undefined;
 
       if (startPoint === 'today') {
         // Sadece bu ay ve bugün için bugünden başla
@@ -183,34 +387,48 @@ export default function GenerateScreen() {
         }
         // Diğer aylar için 1'den başla (normal davranış)
       } else if (startPoint === 'year_start') {
-        // BUG FIX: Yıl başından seçildiğinde
-        // Seçilen dönemin İLK ayından başla, her ay 1'den
-        // Bu zaten doğru çalışıyor, startDay = 1
-        startDay = 1;
+        // ===============================================
+        // KRİTİK BUG FIX: "Yıl Başından" modu
+        // ===============================================
+        // Referans noktası: İçinde bulunulan yılın 1 Ocak'ı
+        // Hesaplama: 1 Ocak'tan bu ayın 1'ine kaç gün geçti?
+        // Bu sayıyı cycleLength'e göre mod alarak phase offset bulunur.
+        //
+        // Örnek (8 günlük döngü):
+        // - 1 Ocak 2026 → dayOfYear = 0 → offset = 0 % 8 = 0 (döngünün 1. günü)
+        // - 1 Şubat 2026 → dayOfYear = 31 → offset = 31 % 8 = 7 (döngünün 8. günü)
+        // - 1 Mart 2026 → dayOfYear = 59 → offset = 59 % 8 = 3 (döngünün 4. günü)
+        // ===============================================
+
+        const dayOfYear = getDayOfYear(year, month, 1);
+        overridePhaseOffset = dayOfYear % cycleLength;
+
+        // Debug log (production'da kaldırılabilir)
+        console.log(`[Yıl Başından] ${year}-${month}: dayOfYear=${dayOfYear}, cycleLength=${cycleLength}, offset=${overridePhaseOffset}`);
       }
-      // month_start için zaten startDay = 1
+      // month_start için zaten startDay = 1, phaseOffset hesaplanmaz (otomatik)
 
       const result = generateMonth(year, month, {
         preserveLocked,
         preserveManual,
         startDay,
+        overridePhaseOffset,
       });
       totalGenerated += result.generated;
       totalSkipped += result.skipped;
     }
 
-    // Başarı mesajı
-    const monthText = selectedMonths.length === 1 ? 'ay' : 'ay';
-    let message = `${totalGenerated} gün oluşturuldu.`;
-    if (totalSkipped > 0) {
-      message += `\n${totalSkipped} gün korundu.`;
-    }
+    // Success modal'ı göster
+    setSuccessModal({
+      visible: true,
+      generated: totalGenerated,
+      skipped: totalSkipped,
+    });
+  };
 
-    Alert.alert(
-      'Plan Oluşturuldu ✓',
-      message,
-      [{ text: 'Tamam', onPress: () => router.back() }]
-    );
+  const handleSuccessModalClose = () => {
+    setSuccessModal({ visible: false, generated: 0, skipped: 0 });
+    router.back();
   };
 
   // Dönem butonları için bilgi
@@ -226,7 +444,7 @@ export default function GenerateScreen() {
     {
       key: 'month_start',
       label: 'Ay Başından',
-      description: 'Her ayın 1\'inden başlar'
+      description: 'Önceki aydan devam eder'
     },
     {
       key: 'today',
@@ -240,271 +458,306 @@ export default function GenerateScreen() {
     },
   ];
 
-  // Seçili şablon
-  const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
-
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.contentContainer}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* ========== ŞABLON SEÇİMİ ========== */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>
-          Vardiya Şablonu
-        </Text>
+    <>
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ========== ŞABLON SEÇİMİ ========== */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>
+            Vardiya Şablonu
+          </Text>
 
-        <View style={styles.templateGrid}>
-          {templates.map((template) => {
-            const isSelected = selectedTemplateId === template.id;
-            const info = getTemplateDisplayInfo(template, shiftTypes);
+          <View style={styles.templateGrid}>
+            {templates.map((template) => {
+              const isSelected = selectedTemplateId === template.id;
+              const info = getTemplateDisplayInfo(template, shiftTypes);
 
-            return (
-              <Pressable
-                key={template.id}
-                style={[
-                  styles.templateCard,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: isSelected ? colors.primary : colors.border,
-                    borderWidth: isSelected ? 2 : 1,
-                  },
-                  isSelected && styles.templateCardSelected,
-                ]}
-                onPress={() => setSelectedTemplateId(template.id)}
-              >
-                {/* Seçili göstergesi */}
-                {isSelected && (
-                  <View style={[styles.selectedBadge, { backgroundColor: colors.primary }]}>
-                    <Text style={styles.selectedBadgeText}>✓</Text>
+              return (
+                <Pressable
+                  key={template.id}
+                  style={[
+                    styles.templateCard,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: isSelected ? colors.primary : colors.border,
+                      borderWidth: isSelected ? 2 : 1,
+                    },
+                    isSelected && styles.templateCardSelected,
+                  ]}
+                  onPress={() => setSelectedTemplateId(template.id)}
+                >
+                  {/* Seçili göstergesi */}
+                  {isSelected && (
+                    <View style={[styles.selectedBadge, { backgroundColor: colors.primary }]}>
+                      <Text style={styles.selectedBadgeText}>✓</Text>
+                    </View>
+                  )}
+
+                  <Text style={[
+                    styles.templateTitle,
+                    { color: colors.text },
+                    isSelected && { color: colors.primary }
+                  ]}>
+                    {info.title}
+                  </Text>
+
+                  <Text style={[styles.templateSubtitle, { color: colors.textMuted }]}>
+                    {info.subtitle}
+                  </Text>
+
+                  <View style={[styles.patternContainer, { backgroundColor: colors.surfaceSecondary }]}>
+                    <Text style={[styles.templatePattern, { color: colors.textSecondary }]}>
+                      {info.pattern}
+                    </Text>
                   </View>
-                )}
+                </Pressable>
+              );
+            })}
+          </View>
 
-                <Text style={[
-                  styles.templateTitle,
-                  { color: colors.text },
-                  isSelected && { color: colors.primary }
-                ]}>
-                  {info.title}
-                </Text>
-
-                <Text style={[styles.templateSubtitle, { color: colors.textMuted }]}>
-                  {info.subtitle}
-                </Text>
-
-                <View style={[styles.patternContainer, { backgroundColor: colors.surfaceSecondary }]}>
-                  <Text style={[styles.templatePattern, { color: colors.textSecondary }]}>
-                    {info.pattern}
+          {/* Yeni Şablon Oluştur - Premium Hero Card */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.createTemplateCard,
+              pressed && styles.createTemplateCardPressed,
+            ]}
+            onPress={handleCreateTemplate}
+          >
+            <LinearGradient
+              colors={isDark
+                ? ['#1E3A5F', '#2D1B4E', '#1E3A5F']
+                : ['#EEF2FF', '#F5F3FF', '#EFF6FF']
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.createTemplateGradient}
+            >
+              <View style={styles.createTemplateContent}>
+                <LinearGradient
+                  colors={['#3B82F6', '#8B5CF6']}
+                  style={styles.createTemplateIcon}
+                >
+                  <Text style={styles.createTemplateIconText}>+</Text>
+                </LinearGradient>
+                <View style={styles.createTemplateText}>
+                  <Text style={[
+                    styles.createTemplateTitle,
+                    { color: isDark ? '#93C5FD' : '#3B82F6' }
+                  ]}>
+                    Kendi Düzenini Oluştur
+                  </Text>
+                  <Text style={[
+                    styles.createTemplateSubtitle,
+                    { color: isDark ? '#A5B4FC' : '#6366F1' }
+                  ]}>
+                    Özel vardiya döngüsü tasarla
                   </Text>
                 </View>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {/* Yeni Şablon Oluştur - Hero Card */}
-        <Pressable
-          style={[styles.createTemplateCard, { borderColor: colors.primary }]}
-          onPress={handleCreateTemplate}
-        >
-          <View style={styles.createTemplateContent}>
-            <View style={[styles.createTemplateIcon, { backgroundColor: colors.primaryLight }]}>
-              <Text style={[styles.createTemplateIconText, { color: colors.primary }]}>+</Text>
-            </View>
-            <View style={styles.createTemplateText}>
-              <Text style={[styles.createTemplateTitle, { color: colors.primary }]}>
-                Kendi Düzenini Oluştur
-              </Text>
-              <Text style={[styles.createTemplateSubtitle, { color: colors.textMuted }]}>
-                Özel vardiya döngüsü tasarla
-              </Text>
-            </View>
-          </View>
-        </Pressable>
-      </View>
-
-      {/* ========== DÖNEM SEÇİMİ ========== */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>
-          Dönem
-        </Text>
-
-        <View style={[styles.rangeCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={styles.rangeGrid}>
-            {rangeOptions.map((option) => {
-              const isSelected = rangePreset === option.key;
-              return (
-                <Pressable
-                  key={option.key}
-                  style={[
-                    styles.rangeButton,
-                    {
-                      backgroundColor: isSelected ? colors.primary : 'transparent',
-                      borderColor: isSelected ? colors.primary : colors.border,
-                    },
-                  ]}
-                  onPress={() => setRangePreset(option.key)}
-                >
-                  <Text style={[
-                    styles.rangeButtonText,
-                    { color: isSelected ? '#FFFFFF' : colors.text }
-                  ]}>
-                    {option.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          {/* Dönem özeti */}
-          <View style={[styles.rangeSummary, { borderTopColor: colors.borderLight }]}>
-            <Text style={[styles.rangeSummaryText, { color: colors.textSecondary }]}>
-              {selectedMonths.length > 0
-                ? selectedMonths.length === 1
-                  ? `${getMonthNameTR(selectedMonths[0].month)} ${selectedMonths[0].year}`
-                  : `${getMonthNameTR(selectedMonths[0].month)} → ${getMonthNameTR(selectedMonths[selectedMonths.length - 1].month)} ${selectedMonths[selectedMonths.length - 1].year}`
-                : 'Dönem seçilmedi'}
-            </Text>
-            <Text style={[styles.rangeSummaryCount, { color: colors.primary }]}>
-              {selectedMonths.length} ay
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* ========== BAŞLANGIÇ NOKTASI ========== */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>
-          Başlangıç Noktası
-        </Text>
-
-        <View style={[styles.startCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={styles.startGrid}>
-            {startOptions.map((option) => {
-              const isSelected = startPoint === option.key;
-              return (
-                <Pressable
-                  key={option.key}
-                  style={[
-                    styles.startButton,
-                    {
-                      backgroundColor: isSelected ? colors.primary : 'transparent',
-                      borderColor: isSelected ? colors.primary : colors.border,
-                    },
-                  ]}
-                  onPress={() => setStartPoint(option.key)}
-                >
-                  <Text style={[
-                    styles.startButtonText,
-                    { color: isSelected ? '#FFFFFF' : colors.text }
-                  ]}>
-                    {option.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          <Text style={[styles.startHint, { color: colors.textMuted }]}>
-            {startOptions.find(o => o.key === startPoint)?.description}
-          </Text>
-        </View>
-      </View>
-
-      {/* ========== SEÇENEKLER ========== */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>
-          Koruma Seçenekleri
-        </Text>
-
-        <View style={[styles.optionsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          {/* Kilitli günler */}
-          <Pressable
-            style={[styles.optionRow, { borderBottomColor: colors.borderLight }]}
-            onPress={() => setPreserveLocked(!preserveLocked)}
-          >
-            <View style={styles.optionContent}>
-              <Text style={[styles.optionLabel, { color: colors.text }]}>
-                Sabitlediğim günleri koru
-              </Text>
-              <Text style={[styles.optionDescription, { color: colors.textMuted }]}>
-                🔒 işaretli günler değiştirilmez
-              </Text>
-            </View>
-            <View style={[
-              styles.toggle,
-              { backgroundColor: preserveLocked ? colors.primary : colors.surfaceSecondary }
-            ]}>
-              <View style={[
-                styles.toggleKnob,
-                preserveLocked && styles.toggleKnobActive
-              ]} />
-            </View>
-          </Pressable>
-
-          {/* Manuel günler */}
-          <Pressable
-            style={styles.optionRow}
-            onPress={() => setPreserveManual(!preserveManual)}
-          >
-            <View style={styles.optionContent}>
-              <Text style={[styles.optionLabel, { color: colors.text }]}>
-                Elle değiştirdiğim günleri koru
-              </Text>
-              <Text style={[styles.optionDescription, { color: colors.textMuted }]}>
-                Önceden düzenlediğin günler korunur
-              </Text>
-            </View>
-            <View style={[
-              styles.toggle,
-              { backgroundColor: preserveManual ? colors.primary : colors.surfaceSecondary }
-            ]}>
-              <View style={[
-                styles.toggleKnob,
-                preserveManual && styles.toggleKnobActive
-              ]} />
-            </View>
+                <Text style={[
+                  styles.createTemplateArrow,
+                  { color: isDark ? '#93C5FD' : '#3B82F6' }
+                ]}>
+                  →
+                </Text>
+              </View>
+            </LinearGradient>
           </Pressable>
         </View>
-      </View>
 
-      {/* ========== UYARI ========== */}
-      <View style={[styles.warningBox, { backgroundColor: colors.warning }]}>
-        <Text style={[styles.warningIcon]}>⚠️</Text>
-        <Text style={[styles.warningText, { color: colors.warningText }]}>
-          Yeni plan, mevcut planların üzerine yazılır.
-        </Text>
-      </View>
-
-      {/* ========== BUTONLAR ========== */}
-      <View style={styles.actions}>
-        <Pressable
-          style={[styles.cancelButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
-          onPress={() => router.back()}
-        >
-          <Text style={[styles.cancelButtonText, { color: colors.textMuted }]}>
-            İptal
+        {/* ========== DÖNEM SEÇİMİ ========== */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>
+            Dönem
           </Text>
-        </Pressable>
 
-        <Pressable
-          style={[
-            styles.generateButton,
-            !selectedTemplateId && styles.generateButtonDisabled
-          ]}
-          onPress={handleGenerate}
-          disabled={!selectedTemplateId}
-        >
-          <Text style={styles.generateButtonText}>
-            {selectedMonths.length === 1 ? '1 Ay' : `${selectedMonths.length} Ay`} Oluştur
+          <View style={[styles.rangeCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={styles.rangeGrid}>
+              {rangeOptions.map((option) => {
+                const isSelected = rangePreset === option.key;
+                return (
+                  <Pressable
+                    key={option.key}
+                    style={[
+                      styles.rangeButton,
+                      {
+                        backgroundColor: isSelected ? colors.primary : 'transparent',
+                        borderColor: isSelected ? colors.primary : colors.border,
+                      },
+                    ]}
+                    onPress={() => setRangePreset(option.key)}
+                  >
+                    <Text style={[
+                      styles.rangeButtonText,
+                      { color: isSelected ? '#FFFFFF' : colors.text }
+                    ]}>
+                      {option.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Dönem özeti */}
+            <View style={[styles.rangeSummary, { borderTopColor: colors.borderLight }]}>
+              <Text style={[styles.rangeSummaryText, { color: colors.textSecondary }]}>
+                {selectedMonths.length > 0
+                  ? selectedMonths.length === 1
+                    ? `${getMonthNameTR(selectedMonths[0].month)} ${selectedMonths[0].year}`
+                    : `${getMonthNameTR(selectedMonths[0].month)} → ${getMonthNameTR(selectedMonths[selectedMonths.length - 1].month)} ${selectedMonths[selectedMonths.length - 1].year}`
+                  : 'Dönem seçilmedi'}
+              </Text>
+              <Text style={[styles.rangeSummaryCount, { color: colors.primary }]}>
+                {selectedMonths.length} ay
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* ========== BAŞLANGIÇ NOKTASI ========== */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>
+            Başlangıç Noktası
           </Text>
-        </Pressable>
-      </View>
 
-      {/* Bottom padding */}
-      <View style={styles.bottomPadding} />
-    </ScrollView>
+          <View style={[styles.startCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={styles.startGrid}>
+              {startOptions.map((option) => {
+                const isSelected = startPoint === option.key;
+                return (
+                  <Pressable
+                    key={option.key}
+                    style={[
+                      styles.startButton,
+                      {
+                        backgroundColor: isSelected ? colors.primary : 'transparent',
+                        borderColor: isSelected ? colors.primary : colors.border,
+                      },
+                    ]}
+                    onPress={() => setStartPoint(option.key)}
+                  >
+                    <Text style={[
+                      styles.startButtonText,
+                      { color: isSelected ? '#FFFFFF' : colors.text }
+                    ]}>
+                      {option.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <Text style={[styles.startHint, { color: colors.textMuted }]}>
+              {startOptions.find(o => o.key === startPoint)?.description}
+            </Text>
+          </View>
+        </View>
+
+        {/* ========== SEÇENEKLER ========== */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>
+            Koruma Seçenekleri
+          </Text>
+
+          <View style={[styles.optionsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            {/* Kilitli günler */}
+            <Pressable
+              style={[styles.optionRow, { borderBottomColor: colors.borderLight }]}
+              onPress={() => setPreserveLocked(!preserveLocked)}
+            >
+              <View style={styles.optionContent}>
+                <Text style={[styles.optionLabel, { color: colors.text }]}>
+                  Sabitlediğim günleri koru
+                </Text>
+                <Text style={[styles.optionDescription, { color: colors.textMuted }]}>
+                  🔒 işaretli günler değiştirilmez
+                </Text>
+              </View>
+              <View style={[
+                styles.toggle,
+                { backgroundColor: preserveLocked ? colors.primary : colors.surfaceSecondary }
+              ]}>
+                <View style={[
+                  styles.toggleKnob,
+                  preserveLocked && styles.toggleKnobActive
+                ]} />
+              </View>
+            </Pressable>
+
+            {/* Manuel günler */}
+            <Pressable
+              style={styles.optionRow}
+              onPress={() => setPreserveManual(!preserveManual)}
+            >
+              <View style={styles.optionContent}>
+                <Text style={[styles.optionLabel, { color: colors.text }]}>
+                  Elle değiştirdiğim günleri koru
+                </Text>
+                <Text style={[styles.optionDescription, { color: colors.textMuted }]}>
+                  Önceden düzenlediğin günler korunur
+                </Text>
+              </View>
+              <View style={[
+                styles.toggle,
+                { backgroundColor: preserveManual ? colors.primary : colors.surfaceSecondary }
+              ]}>
+                <View style={[
+                  styles.toggleKnob,
+                  preserveManual && styles.toggleKnobActive
+                ]} />
+              </View>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* ========== UYARI ========== */}
+        <View style={[styles.warningBox, { backgroundColor: colors.warning }]}>
+          <Text style={[styles.warningIcon]}>⚠️</Text>
+          <Text style={[styles.warningText, { color: colors.warningText }]}>
+            Yeni plan, mevcut planların üzerine yazılır.
+          </Text>
+        </View>
+
+        {/* ========== BUTONLAR ========== */}
+        <View style={styles.actions}>
+          <Pressable
+            style={[styles.cancelButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={() => router.back()}
+          >
+            <Text style={[styles.cancelButtonText, { color: colors.textMuted }]}>
+              İptal
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.generateButton,
+              !selectedTemplateId && styles.generateButtonDisabled
+            ]}
+            onPress={handleGenerate}
+            disabled={!selectedTemplateId}
+          >
+            <Text style={styles.generateButtonText}>
+              {selectedMonths.length === 1 ? '1 Ay' : `${selectedMonths.length} Ay`} Oluştur
+            </Text>
+          </Pressable>
+        </View>
+
+        {/* Bottom padding */}
+        <View style={styles.bottomPadding} />
+      </ScrollView>
+
+      {/* Success Modal */}
+      <SuccessModal
+        visible={successModal.visible}
+        generated={successModal.generated}
+        skipped={successModal.skipped}
+        onClose={handleSuccessModalClose}
+      />
+    </>
   );
 }
 
@@ -594,13 +847,32 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Create Template Hero Card
+  // Create Template Hero Card - Premium Design
   createTemplateCard: {
     marginTop: 12,
-    padding: 16,
     borderRadius: 16,
-    borderWidth: 2,
-    borderStyle: 'dashed',
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#6366F1',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  createTemplateCardPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
+  },
+  createTemplateGradient: {
+    padding: 18,
+    borderWidth: 1.5,
+    borderColor: 'rgba(99, 102, 241, 0.3)',
+    borderRadius: 16,
   },
   createTemplateContent: {
     flexDirection: 'row',
@@ -609,25 +881,32 @@ const styles = StyleSheet.create({
   createTemplateIcon: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 14,
   },
   createTemplateIconText: {
-    fontSize: 28,
-    fontWeight: '300',
+    fontSize: 26,
+    fontWeight: '400',
+    color: '#FFFFFF',
   },
   createTemplateText: {
     flex: 1,
   },
   createTemplateTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 2,
+    fontWeight: '700',
+    marginBottom: 3,
   },
   createTemplateSubtitle: {
     fontSize: 13,
+    fontWeight: '500',
+  },
+  createTemplateArrow: {
+    fontSize: 24,
+    fontWeight: '300',
+    marginLeft: 8,
   },
 
   // Range Selection
