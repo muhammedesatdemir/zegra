@@ -59,7 +59,6 @@ interface ScheduleState {
       preserveLocked?: boolean;
       preserveManual?: boolean;
       startDay?: number;
-      overridePhaseOffset?: number; // Dışarıdan phase offset belirtmek için (Yıl başından modu)
     }
   ) => { generated: number; skipped: number };
 
@@ -184,7 +183,6 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       preserveLocked = true,
       preserveManual = true,
       startDay = 1,
-      overridePhaseOffset, // Dışarıdan gelen phase offset (Yıl başından modu için)
     } = options;
     const state = get();
     const repo = getRepository();
@@ -201,10 +199,7 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
     // Calculate phase offset
     let phaseOffset = 0;
 
-    // Eğer dışarıdan override geliyorsa, onu kullan (Yıl başından modu)
-    if (overridePhaseOffset !== undefined) {
-      phaseOffset = overridePhaseOffset;
-    } else if (startDay > 1) {
+    if (startDay > 1) {
       // Look at the day before startDay to maintain continuity
       const prevDayStr = `${year}-${String(month).padStart(2, '0')}-${String(startDay - 1).padStart(2, '0')}`;
       const prevDay = state.plannedDays[prevDayStr];

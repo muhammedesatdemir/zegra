@@ -24,7 +24,7 @@ import { getCurrentYearMonth, getTodayISO } from '../src/utils/date';
 import { useTheme } from '../src/context';
 import { isOffCode } from '../src/constants/shifts';
 
-type StartPoint = 'month_start' | 'today' | 'year_start';
+type StartPoint = 'month_start' | 'today';
 type RangePreset = 'this_month' | 'next_3_months' | 'next_6_months' | 'until_year_end';
 
 // Success modal state tipi
@@ -93,20 +93,6 @@ function getTemplateDisplayInfo(template: { name: string; steps: string[]; cycle
     subtitle: `${cycleLength} günlük döngü • ${workDays} iş, ${offDays} izin`,
     pattern: description,
   };
-}
-
-/**
- * Yılın 1 Ocak'ından belirli bir tarihe kadar geçen gün sayısını hesapla
- * @param year Yıl
- * @param month Ay (1-12)
- * @param day Gün
- * @returns Gün sayısı (0-indexed, 1 Ocak = 0)
- */
-function getDayOfYear(year: number, month: number, day: number): number {
-  const date = new Date(year, month - 1, day);
-  const startOfYear = new Date(year, 0, 1);
-  const diff = date.getTime() - startOfYear.getTime();
-  return Math.floor(diff / (1000 * 60 * 60 * 24));
 }
 
 // ============================================
@@ -308,10 +294,6 @@ export default function GenerateScreen() {
     skipped: 0,
   });
 
-  // Seçili template'in cycle length'i
-  const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
-  const cycleLength = selectedTemplate?.cycleLength ?? 8;
-
   // Calculate months based on range preset
   const selectedMonths = useMemo(() => {
     const months: { year: number; month: number }[] = [];
@@ -378,7 +360,6 @@ export default function GenerateScreen() {
     for (const { year, month } of sortedMonths) {
       // Determine start day based on startPoint
       let startDay = 1;
-      let overridePhaseOffset: number | undefined = undefined;
 
       if (startPoint === 'today') {
         // Sadece bu ay ve bugün için bugünden başla
@@ -386,25 +367,6 @@ export default function GenerateScreen() {
           startDay = todayDay;
         }
         // Diğer aylar için 1'den başla (normal davranış)
-      } else if (startPoint === 'year_start') {
-        // ===============================================
-        // KRİTİK BUG FIX: "Yıl Başından" modu
-        // ===============================================
-        // Referans noktası: İçinde bulunulan yılın 1 Ocak'ı
-        // Hesaplama: 1 Ocak'tan bu ayın 1'ine kaç gün geçti?
-        // Bu sayıyı cycleLength'e göre mod alarak phase offset bulunur.
-        //
-        // Örnek (8 günlük döngü):
-        // - 1 Ocak 2026 → dayOfYear = 0 → offset = 0 % 8 = 0 (döngünün 1. günü)
-        // - 1 Şubat 2026 → dayOfYear = 31 → offset = 31 % 8 = 7 (döngünün 8. günü)
-        // - 1 Mart 2026 → dayOfYear = 59 → offset = 59 % 8 = 3 (döngünün 4. günü)
-        // ===============================================
-
-        const dayOfYear = getDayOfYear(year, month, 1);
-        overridePhaseOffset = dayOfYear % cycleLength;
-
-        // Debug log (production'da kaldırılabilir)
-        console.log(`[Yıl Başından] ${year}-${month}: dayOfYear=${dayOfYear}, cycleLength=${cycleLength}, offset=${overridePhaseOffset}`);
       }
       // month_start için zaten startDay = 1, phaseOffset hesaplanmaz (otomatik)
 
@@ -412,7 +374,6 @@ export default function GenerateScreen() {
         preserveLocked,
         preserveManual,
         startDay,
-        overridePhaseOffset,
       });
       totalGenerated += result.generated;
       totalSkipped += result.skipped;
@@ -439,7 +400,7 @@ export default function GenerateScreen() {
     { key: 'until_year_end', label: 'Yıl Sonu' },
   ];
 
-  // Başlangıç noktası seçenekleri
+  // Başlangıç noktası seçenekleri (2 buton - simetrik)
   const startOptions: { key: StartPoint; label: string; description: string }[] = [
     {
       key: 'month_start',
@@ -450,11 +411,6 @@ export default function GenerateScreen() {
       key: 'today',
       label: 'Bugünden',
       description: 'Bugünden itibaren doldurur'
-    },
-    {
-      key: 'year_start',
-      label: 'Yıl Başından',
-      description: 'Döngüyü Ocak\'tan hesaplar'
     },
   ];
 
@@ -624,24 +580,24 @@ export default function GenerateScreen() {
           </Text>
 
           <View style={[styles.startCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.startGrid}>
+            <View style={styles.startGridTwo}>
               {startOptions.map((option) => {
                 const isSelected = startPoint === option.key;
                 return (
                   <Pressable
                     key={option.key}
                     style={[
-                      styles.startButton,
+                      styles.startButtonPremium,
                       {
-                        backgroundColor: isSelected ? colors.primary : 'transparent',
-                        borderColor: isSelected ? colors.primary : colors.border,
+                        backgroundColor: isSelected ? colors.primary : '#F1F5F9',
                       },
+                      isSelected && styles.startButtonPremiumSelected,
                     ]}
                     onPress={() => setStartPoint(option.key)}
                   >
                     <Text style={[
-                      styles.startButtonText,
-                      { color: isSelected ? '#FFFFFF' : colors.text }
+                      styles.startButtonTextPremium,
+                      { color: isSelected ? '#FFFFFF' : '#334155' }
                     ]}>
                       {option.label}
                     </Text>
@@ -976,20 +932,33 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  startGrid: {
+  startGridTwo: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
     marginBottom: 12,
   },
-  startButton: {
+  startButtonPremium: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 1,
+    height: 46,
+    borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  startButtonText: {
-    fontSize: 13,
+  startButtonPremiumSelected: {
+    ...Platform.select({
+      ios: {
+        shadowColor: '#3B82F6',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  startButtonTextPremium: {
+    fontSize: 14,
     fontWeight: '600',
   },
   startHint: {
