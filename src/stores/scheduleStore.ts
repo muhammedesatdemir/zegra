@@ -200,14 +200,10 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
     let phaseOffset = 0;
 
     if (startDay > 1) {
-      // Look at the day before startDay to maintain continuity
-      const prevDayStr = `${year}-${String(month).padStart(2, '0')}-${String(startDay - 1).padStart(2, '0')}`;
-      const prevDay = state.plannedDays[prevDayStr];
-      phaseOffset = calculatePhaseForNewMonth(
-        activeTemplate,
-        prevDay?.shiftCode ?? null,
-        prevDay?.cycleIndex // Pass the exact cycle index for accurate continuity
-      );
+      // "Bugünden" modu: Yeni şablon her zaman index 0'dan başlar
+      // Önceki günün cycleIndex'i eski şablona ait olabilir, bu yüzden kullanmıyoruz
+      // Kullanıcı yeni şablon seçip "Bugünden" dediğinde, şablonun başından başlamak istiyor
+      phaseOffset = 0;
     } else {
       // Starting from day 1, look at last day of previous month
       const prevMonthLastDay = new Date(year, month - 1, 0); // Last day of previous month
