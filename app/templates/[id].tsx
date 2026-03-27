@@ -425,10 +425,10 @@ export default function TemplateDetailScreen() {
                         {
                           borderColor: shiftColor,
                           shadowColor: shiftColor,
-                          shadowOpacity: 0.4,
-                          shadowRadius: 8,
-                          shadowOffset: { width: 0, height: 2 },
-                          elevation: 6,
+                          shadowOpacity: 0.5,
+                          shadowRadius: 10,
+                          shadowOffset: { width: 0, height: 3 },
+                          elevation: 8,
                         },
                       ],
                       pressed && { transform: [{ scale: 0.96 }] },
@@ -660,6 +660,7 @@ const styles = StyleSheet.create({
   stepsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: 10,
   },
   stepCard: {
@@ -683,8 +684,8 @@ const styles = StyleSheet.create({
     }),
   },
   stepCardSelected: {
-    borderWidth: 2.5,
-    transform: [{ scale: 1.02 }],
+    borderWidth: 3,
+    transform: [{ scale: 1.05 }],
   },
   stepIndex: {
     fontSize: 11,
