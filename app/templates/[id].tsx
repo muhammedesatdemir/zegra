@@ -420,13 +420,25 @@ export default function TemplateDetailScreen() {
                     style={({ pressed }) => [
                       styles.stepCard,
                       { backgroundColor: colors.surface, borderColor: shiftColor },
-                      isSelected && [styles.stepCardSelected, { backgroundColor: `${shiftColor}15` }],
-                      pressed && { transform: [{ scale: 0.95 }], opacity: 0.9 },
+                      isSelected && [
+                        styles.stepCardSelected,
+                        {
+                          borderColor: shiftColor,
+                          shadowColor: shiftColor,
+                          shadowOpacity: 0.4,
+                          shadowRadius: 8,
+                          shadowOffset: { width: 0, height: 2 },
+                          elevation: 6,
+                        },
+                      ],
+                      pressed && { transform: [{ scale: 0.96 }] },
                     ]}
                     onPress={() => isEditable && setSelectedStepIndex(index)}
                     onLongPress={() => isEditable && removeStep(index)}
                   >
-                    <Text style={[styles.stepIndex, { color: colors.textMuted }]}>{index + 1}</Text>
+                    <Text style={[styles.stepIndex, { color: isSelected ? shiftColor : colors.textMuted }]}>
+                      {index + 1}
+                    </Text>
                     <View style={[styles.stepBadge, { backgroundColor: shiftColor }]}>
                       <Text style={styles.stepCode}>{getShiftShortName(step)}</Text>
                     </View>
@@ -464,25 +476,23 @@ export default function TemplateDetailScreen() {
             <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
               {selectedStepIndex + 1}. Gün İçin Vardiya Seç
             </Text>
-            <View style={[styles.shiftSelectorCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <View style={styles.shiftGrid}>
-                {shiftTypes.map((shift) => (
-                  <Pressable
-                    key={shift.id}
-                    style={({ pressed }) => [
-                      styles.shiftOption,
-                      { borderColor: shift.color },
-                      pressed && { transform: [{ scale: 0.95 }], opacity: 0.9 },
-                    ]}
-                    onPress={() => handleStepChange(shift.code)}
-                  >
-                    <View style={[styles.shiftOptionBadge, { backgroundColor: shift.color }]}>
-                      <Text style={styles.shiftOptionCode}>{shift.shortName}</Text>
-                    </View>
-                    <Text style={[styles.shiftOptionName, { color: colors.text }]}>{shift.name}</Text>
-                  </Pressable>
-                ))}
-              </View>
+            <View style={[styles.shiftSelectorBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              {shiftTypes.map((shift) => (
+                <Pressable
+                  key={shift.id}
+                  style={({ pressed }) => [
+                    styles.shiftBarItem,
+                    { borderColor: shift.color },
+                    pressed && { transform: [{ scale: 0.95 }], opacity: 0.85 },
+                  ]}
+                  onPress={() => handleStepChange(shift.code)}
+                >
+                  <View style={[styles.shiftBarBadge, { backgroundColor: shift.color }]}>
+                    <Text style={styles.shiftBarCode}>{shift.shortName}</Text>
+                  </View>
+                  <Text style={[styles.shiftBarName, { color: colors.text }]}>{shift.name}</Text>
+                </Pressable>
+              ))}
             </View>
           </View>
         )}
@@ -493,7 +503,7 @@ export default function TemplateDetailScreen() {
             Döngü Önizleme
           </Text>
           <View style={[styles.previewCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.previewScroll}>
+            <View style={styles.previewGrid}>
               {steps.map((step, index) => (
                 <View
                   key={index}
@@ -503,10 +513,10 @@ export default function TemplateDetailScreen() {
                 </View>
               ))}
               {/* Repeat indicator */}
-              <View style={[styles.previewRepeat, { borderColor: colors.border }]}>
-                <Text style={[styles.previewRepeatText, { color: colors.textMuted }]}>↺</Text>
+              <View style={[styles.previewRepeatInline, { backgroundColor: colors.surfaceSecondary }]}>
+                <Text style={[styles.previewRepeatIcon, { color: colors.textMuted }]}>↺</Text>
               </View>
-            </ScrollView>
+            </View>
             <Text style={[styles.previewHint, { color: colors.textMuted }]}>
               Bu döngü sürekli tekrar eder
             </Text>
@@ -674,6 +684,7 @@ const styles = StyleSheet.create({
   },
   stepCardSelected: {
     borderWidth: 2.5,
+    transform: [{ scale: 1.02 }],
   },
   stepIndex: {
     fontSize: 11,
@@ -724,8 +735,53 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Shift Selector
-  shiftSelectorCard: {
+  // Shift Selector - Horizontal Bar
+  shiftSelectorBar: {
+    flexDirection: 'row',
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 8,
+    gap: 6,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 1,
+      },
+    }),
+  },
+  shiftBarItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    gap: 4,
+  },
+  shiftBarBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shiftBarCode: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  shiftBarName: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+
+  // Preview - Wrap Grid
+  previewCard: {
     borderRadius: 16,
     borderWidth: 1,
     padding: 14,
@@ -741,88 +797,38 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  shiftGrid: {
+  previewGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-  },
-  shiftOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    borderWidth: 2,
-    gap: 10,
-  },
-  shiftOptionBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shiftOptionCode: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  shiftOptionName: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-
-  // Preview
-  previewCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 1,
-      },
-    }),
-  },
-  previewScroll: {
-    flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingRight: 8,
   },
   previewChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    minWidth: 40,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    minWidth: 36,
     alignItems: 'center',
   },
   previewChipText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: '#FFFFFF',
   },
-  previewRepeat: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
+  previewRepeatInline: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 4,
   },
-  previewRepeatText: {
-    fontSize: 14,
+  previewRepeatIcon: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   previewHint: {
     fontSize: 11,
-    marginTop: 12,
+    marginTop: 10,
     textAlign: 'center',
   },
 
