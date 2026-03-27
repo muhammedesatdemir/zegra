@@ -284,8 +284,7 @@ export default function GenerateScreen() {
   );
   const [startPoint, setStartPoint] = useState<StartPoint>('month_start');
   const [rangePreset, setRangePreset] = useState<RangePreset>('this_month');
-  const [preserveLocked, setPreserveLocked] = useState(true);
-  const [preserveManual, setPreserveManual] = useState(true);
+  const [preserveCustomDays, setPreserveCustomDays] = useState(true);
 
   // Success modal state
   const [successModal, setSuccessModal] = useState<SuccessModalState>({
@@ -371,8 +370,8 @@ export default function GenerateScreen() {
       // month_start için zaten startDay = 1, phaseOffset hesaplanmaz (otomatik)
 
       const result = generateMonth(year, month, {
-        preserveLocked,
-        preserveManual,
+        preserveLocked: preserveCustomDays,
+        preserveManual: preserveCustomDays,
         startDay,
       });
       totalGenerated += result.generated;
@@ -619,50 +618,25 @@ export default function GenerateScreen() {
           </Text>
 
           <View style={[styles.optionsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            {/* Kilitli günler */}
             <Pressable
-              style={[styles.optionRow, { borderBottomColor: colors.borderLight }]}
-              onPress={() => setPreserveLocked(!preserveLocked)}
+              style={styles.optionRowSingle}
+              onPress={() => setPreserveCustomDays(!preserveCustomDays)}
             >
               <View style={styles.optionContent}>
                 <Text style={[styles.optionLabel, { color: colors.text }]}>
-                  Sabitlediğim günleri koru
+                  Özel ayarladığım günleri koru
                 </Text>
                 <Text style={[styles.optionDescription, { color: colors.textMuted }]}>
-                  🔒 işaretli günler değiştirilmez
+                  Elle değiştirdiğiniz veya sabitlediğiniz günler korunur
                 </Text>
               </View>
               <View style={[
                 styles.toggle,
-                { backgroundColor: preserveLocked ? colors.primary : colors.surfaceSecondary }
+                { backgroundColor: preserveCustomDays ? colors.primary : colors.surfaceSecondary }
               ]}>
                 <View style={[
                   styles.toggleKnob,
-                  preserveLocked && styles.toggleKnobActive
-                ]} />
-              </View>
-            </Pressable>
-
-            {/* Manuel günler */}
-            <Pressable
-              style={styles.optionRow}
-              onPress={() => setPreserveManual(!preserveManual)}
-            >
-              <View style={styles.optionContent}>
-                <Text style={[styles.optionLabel, { color: colors.text }]}>
-                  Elle değiştirdiğim günleri koru
-                </Text>
-                <Text style={[styles.optionDescription, { color: colors.textMuted }]}>
-                  Önceden düzenlediğin günler korunur
-                </Text>
-              </View>
-              <View style={[
-                styles.toggle,
-                { backgroundColor: preserveManual ? colors.primary : colors.surfaceSecondary }
-              ]}>
-                <View style={[
-                  styles.toggleKnob,
-                  preserveManual && styles.toggleKnobActive
+                  preserveCustomDays && styles.toggleKnobActive
                 ]} />
               </View>
             </Pressable>
@@ -990,6 +964,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
+  },
+  optionRowSingle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   optionContent: {
     flex: 1,
