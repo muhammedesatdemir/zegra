@@ -2,6 +2,7 @@
  * Root Layout
  *
  * Initializes the app and sets up navigation.
+ * Data is loaded synchronously from disk on first render.
  */
 
 import { useEffect } from 'react';
@@ -78,7 +79,6 @@ export default function RootLayout() {
   const loadAllData = useScheduleStore((state) => state.loadAllData);
 
   useEffect(() => {
-    // Load data when app starts
     loadAllData();
   }, [loadAllData]);
 

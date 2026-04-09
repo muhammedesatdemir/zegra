@@ -11,7 +11,6 @@ import type {
   ProgramTemplate,
   PlannedDay,
   AppSettings,
-  GenerateOptions,
   RevisionOptions,
 } from '../types';
 import { getRepository } from '../repositories';
@@ -117,6 +116,7 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
   // ============================================
 
   loadAllData: () => {
+    // getRepository() triggers sync load from disk on first call
     const repo = getRepository();
     set({
       shiftTypes: repo.getShiftTypes(),
