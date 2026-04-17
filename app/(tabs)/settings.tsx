@@ -63,9 +63,10 @@ export default function SettingsScreen() {
 
     for (const dateStr of sortedDates) {
       const day = plannedDays[dateStr];
+      if (!day) continue;
       const shift = shiftTypes.find(st => st.code === day.shiftCode);
       const date = new Date(dateStr);
-      const dayName = dayNames[date.getDay()];
+      const dayName = dayNames[date.getDay()] ?? '';
 
       const row = [
         dateStr,

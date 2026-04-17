@@ -26,19 +26,21 @@ interface DayCellProps {
 
 // FINAL COLOR SYSTEM - using shift type's own color as base
 // Background colors are soft versions, text colors provide contrast
-const SHIFT_BG_COLORS: Record<string, string> = {
+const SHIFT_BG_COLORS = {
   S: '#DCFCE7',      // Soft green for Sabah
   Ö: '#FED7AA',      // Soft orange for Öğle - TURKISH Ö CHARACTER
   G: '#DBEAFE',      // Soft blue for Gece
   Off: '#F1F5F9',    // Slate gray for Off
-};
+} as const;
 
-const SHIFT_TEXT_COLORS: Record<string, string> = {
+const SHIFT_TEXT_COLORS = {
   S: '#166534',      // Dark green
   Ö: '#C2410C',      // Dark orange - TURKISH Ö CHARACTER
   G: '#1D4ED8',      // Dark blue
   Off: '#475569',    // Slate text
-};
+} as const;
+
+type ShiftColorKey = keyof typeof SHIFT_BG_COLORS;
 
 // Get colors - prefer shift type's native color, fallback to our premium palette
 function getShiftColors(
@@ -51,10 +53,11 @@ function getShiftColors(
   const shortName = shiftType.shortName;
 
   // Check our premium color palette first (handles S, Ö, G, Off)
-  if (shortName && SHIFT_BG_COLORS[shortName]) {
+  if (shortName && shortName in SHIFT_BG_COLORS) {
+    const key = shortName as ShiftColorKey;
     return {
-      bg: SHIFT_BG_COLORS[shortName],
-      text: SHIFT_TEXT_COLORS[shortName],
+      bg: SHIFT_BG_COLORS[key],
+      text: SHIFT_TEXT_COLORS[key],
     };
   }
 

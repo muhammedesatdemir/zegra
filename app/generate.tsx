@@ -282,7 +282,7 @@ export default function GenerateScreen() {
 
   const { year: currentYear, month: currentMonth } = getCurrentYearMonth();
   const today = getTodayISO();
-  const todayDay = parseInt(today.split('-')[2], 10);
+  const todayDay = parseInt(today.split('-')[2] ?? '1', 10);
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
     activeTemplate?.id ?? null
@@ -576,11 +576,15 @@ export default function GenerateScreen() {
             {/* Dönem özeti */}
             <View style={[styles.rangeSummary, { borderTopColor: colors.borderLight }]}>
               <Text style={[styles.rangeSummaryText, { color: colors.textSecondary }]}>
-                {selectedMonths.length > 0
-                  ? selectedMonths.length === 1
-                    ? `${getMonthNameTR(selectedMonths[0].month)} ${selectedMonths[0].year}`
-                    : `${getMonthNameTR(selectedMonths[0].month)} → ${getMonthNameTR(selectedMonths[selectedMonths.length - 1].month)} ${selectedMonths[selectedMonths.length - 1].year}`
-                  : 'Dönem seçilmedi'}
+                {(() => {
+                  const first = selectedMonths[0];
+                  const last = selectedMonths[selectedMonths.length - 1];
+                  if (!first || !last) return 'Dönem seçilmedi';
+                  if (first === last) {
+                    return `${getMonthNameTR(first.month)} ${first.year}`;
+                  }
+                  return `${getMonthNameTR(first.month)} → ${getMonthNameTR(last.month)} ${last.year}`;
+                })()}
               </Text>
               <Text style={[styles.rangeSummaryCount, { color: colors.primary }]}>
                 {selectedMonths.length} ay

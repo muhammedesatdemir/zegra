@@ -231,6 +231,11 @@ const styles = StyleSheet.create({
     height: 3,
     borderRadius: 1.5,
   },
+  customDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
   lockIcon: {
     fontSize: 9,
   },

@@ -36,7 +36,7 @@ export default function HomeScreen() {
 
   // Get shift type details for today
   const todayShiftType = todayShift
-    ? shiftTypes.find((st) => st.code === todayShift.shiftCode)
+    ? shiftTypes.find((st) => st.code === todayShift.shiftCode) ?? null
     : null;
 
   // Prepare upcoming 7 days data
