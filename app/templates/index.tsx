@@ -96,7 +96,7 @@ export default function TemplatesScreen() {
         style={styles.scroll}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: 96 + Math.max(insets.bottom, 16) },
+          { paddingBottom: 112 + Math.max(insets.bottom, 16) },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -240,7 +240,7 @@ export default function TemplatesScreen() {
           {
             backgroundColor: colors.surface,
             borderTopColor: colors.border,
-            paddingBottom: Math.max(insets.bottom, 16),
+            paddingBottom: Math.max(insets.bottom + 10, 24),
           },
         ]}
       >

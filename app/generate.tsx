@@ -540,28 +540,32 @@ export default function GenerateScreen() {
           </Text>
 
           <View style={[styles.rangeCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.rangeGrid}>
+            <View style={[styles.segmentTrack, { backgroundColor: colors.surfaceSecondary }]}>
               {rangeOptions.map((option) => {
                 const isSelected = rangePreset === option.key;
                 return (
                   <PressableScale
                     key={option.key}
                     style={[
-                      styles.rangeButton,
-                      {
-                        backgroundColor: isSelected ? colors.primary : 'transparent',
-                        borderColor: isSelected ? colors.primary : colors.border,
-                      },
+                      styles.segmentItem,
+                      isSelected && [
+                        styles.segmentItemSelected,
+                        { backgroundColor: colors.primary },
+                      ],
                     ]}
                     onPress={() => setRangePreset(option.key)}
-                    borderRadius={10}
+                    borderRadius={9}
                     pressedScale={0.96}
-                    rippleColor={isSelected ? 'rgba(255,255,255,0.18)' : 'rgba(59,130,246,0.10)'}
+                    pressedOpacity={isSelected ? 0.92 : 0.8}
+                    rippleColor={isSelected ? 'rgba(255,255,255,0.18)' : 'rgba(59,130,246,0.08)'}
                   >
-                    <Text style={[
-                      styles.rangeButtonText,
-                      { color: isSelected ? '#FFFFFF' : colors.text }
-                    ]}>
+                    <Text
+                      style={[
+                        styles.segmentItemText,
+                        { color: isSelected ? '#FFFFFF' : colors.textSecondary },
+                        isSelected && styles.segmentItemTextSelected,
+                      ]}
+                    >
                       {option.label}
                     </Text>
                   </PressableScale>
@@ -592,28 +596,33 @@ export default function GenerateScreen() {
           </Text>
 
           <View style={[styles.startCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.startGridTwo}>
+            <View style={[styles.segmentTrack, { backgroundColor: colors.surfaceSecondary }]}>
               {startOptions.map((option) => {
                 const isSelected = startPoint === option.key;
                 return (
                   <PressableScale
                     key={option.key}
                     style={[
-                      styles.startButtonPremium,
-                      {
-                        backgroundColor: isSelected ? colors.primary : '#F1F5F9',
-                      },
-                      isSelected && styles.startButtonPremiumSelected,
+                      styles.segmentItem,
+                      styles.segmentItemLarge,
+                      isSelected && [
+                        styles.segmentItemSelected,
+                        { backgroundColor: colors.primary },
+                      ],
                     ]}
                     onPress={() => setStartPoint(option.key)}
-                    borderRadius={12}
+                    borderRadius={10}
                     pressedScale={0.97}
-                    rippleColor={isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(59,130,246,0.10)'}
+                    pressedOpacity={isSelected ? 0.92 : 0.8}
+                    rippleColor={isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(59,130,246,0.08)'}
                   >
-                    <Text style={[
-                      styles.startButtonTextPremium,
-                      { color: isSelected ? '#FFFFFF' : '#334155' }
-                    ]}>
+                    <Text
+                      style={[
+                        styles.segmentItemText,
+                        { color: isSelected ? '#FFFFFF' : colors.textSecondary },
+                        isSelected && styles.segmentItemTextSelected,
+                      ]}
+                    >
                       {option.label}
                     </Text>
                   </PressableScale>
@@ -877,22 +886,48 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  rangeGrid: {
+  // Segmented control (single-select group) — shared between Dönem & Başlangıç
+  segmentTrack: {
     flexDirection: 'row',
-    padding: 8,
-    gap: 8,
+    padding: 4,
+    margin: 8,
+    borderRadius: 12,
+    gap: 2,
   },
-  rangeButton: {
+  segmentItem: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 10,
-    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    borderRadius: 9,
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    overflow: Platform.OS === 'android' ? 'hidden' : 'visible',
   },
-  rangeButtonText: {
+  segmentItemLarge: {
+    paddingVertical: 13,
+    borderRadius: 10,
+  },
+  segmentItemSelected: {
+    ...Platform.select({
+      ios: {
+        shadowColor: '#3B82F6',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.22,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  segmentItemText: {
     fontSize: 14,
     fontWeight: '600',
+    includeFontPadding: false,
+  },
+  segmentItemTextSelected: {
+    fontWeight: '700',
   },
   rangeSummary: {
     flexDirection: 'row',
@@ -914,7 +949,7 @@ const styles = StyleSheet.create({
   startCard: {
     borderRadius: 16,
     borderWidth: 1,
-    padding: 12,
+    paddingBottom: 12,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -926,35 +961,6 @@ const styles = StyleSheet.create({
         elevation: 2,
       },
     }),
-  },
-  startGridTwo: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 12,
-  },
-  startButtonPremium: {
-    flex: 1,
-    height: 46,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  startButtonPremiumSelected: {
-    ...Platform.select({
-      ios: {
-        shadowColor: '#3B82F6',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.25,
-        shadowRadius: 6,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  startButtonTextPremium: {
-    fontSize: 14,
-    fontWeight: '600',
   },
   startHint: {
     fontSize: 12,
