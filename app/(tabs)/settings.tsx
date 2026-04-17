@@ -96,7 +96,7 @@ export default function SettingsScreen() {
       // user's timezone (matches the day the user tapped "export").
       const now = new Date();
       const fileDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const fileName = `zegra-vardiya-${fileDate}.csv`;
+      const fileName = `zekra-vardiya-${fileDate}.csv`;
       const file = new ExpoFile(Paths.cache, fileName);
       file.write(csvContent);
       const filePath = file.uri;
@@ -164,7 +164,7 @@ export default function SettingsScreen() {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: insets.bottom + 20 },
+          { paddingBottom: insets.bottom + 8 },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -330,23 +330,30 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
             HAKKINDA
           </Text>
-          <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            <View style={styles.row}>
-              <View style={styles.rowLeft}>
-                <View style={[styles.iconContainer, { backgroundColor: '#6B728020' }]}>
-                  <Text style={styles.versionIcon}>v</Text>
-                </View>
-                <Text style={[styles.rowLabel, { color: colors.text }]}>Versiyon</Text>
-              </View>
-              <Text style={[styles.versionText, { color: colors.textMuted }]}>1.0.0</Text>
+          <View style={[styles.card, styles.aboutCard, { backgroundColor: colors.surface }]}>
+            <View style={styles.aboutHeader}>
+              <Text style={[styles.aboutBrand, { color: colors.text }]}>Zekra</Text>
+              <Text style={[styles.aboutVersion, { color: colors.textSecondary }]}>
+                Sürüm 1.0.0
+              </Text>
             </View>
+
+            <View style={[styles.aboutDivider, { backgroundColor: colors.border }]} />
+
+            <Text style={[styles.aboutLine, { color: colors.textSecondary }]}>
+              <Text style={styles.aboutLineLabel}>Geliştiren: </Text>
+              Muhammed Esat Demir
+            </Text>
+            <Text style={[styles.aboutLine, { color: colors.textSecondary }]}>
+              <Text style={styles.aboutLineLabel}>Fikir katkısı: </Text>
+              Muhammet Mustafa Demir
+            </Text>
           </View>
         </View>
 
-        {/* Footer */}
+        {/* Footer — hafif imza */}
         <View style={styles.footer}>
-          <Text style={[styles.footerTitle, { color: colors.text }]}>Zegra</Text>
-          <Text style={[styles.footerSubtitle, { color: colors.textMuted }]}>
+          <Text style={[styles.footerSignature, { color: colors.textMuted }]}>
             Vardiyalı çalışanlar için pratik planlama
           </Text>
         </View>
@@ -623,13 +630,6 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 2,
   },
 
-  // Version Icon
-  versionIcon: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#6B7280',
-  },
-
   // Arrow
   arrowContainer: {
     width: 28,
@@ -672,24 +672,53 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Version
-  versionText: {
-    fontSize: 15,
+  // Hakkında (About) card
+  aboutCard: {
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 14,
+  },
+  aboutHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 12,
+  },
+  aboutBrand: {
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  aboutVersion: {
+    fontSize: 12,
     fontWeight: '500',
+    opacity: 0.85,
+  },
+  aboutDivider: {
+    height: 1,
+    marginTop: 12,
+    marginBottom: 14,
+    opacity: 0.5,
+  },
+  aboutLine: {
+    fontSize: 13,
+    lineHeight: 20,
+    opacity: 0.85,
+  },
+  aboutLineLabel: {
+    opacity: 0.7,
   },
 
-  // Footer
+  // Footer (imza)
   footer: {
     alignItems: 'center',
-    paddingVertical: 24,
+    paddingTop: 4,
+    paddingBottom: 12,
   },
-  footerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  footerSubtitle: {
-    fontSize: 14,
+  footerSignature: {
+    fontSize: 12,
+    fontWeight: '400',
+    letterSpacing: 0.3,
+    opacity: 0.75,
   },
 
   // Modal

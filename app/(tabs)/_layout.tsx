@@ -51,6 +51,13 @@ export default function TabLayout() {
         options={{
           title: 'Ana Sayfa',
           tabBarIcon: ({ focused }) => <TabIcon name="home" focused={focused} />,
+          headerTitle: () => (
+            <View style={styles.brandHeader}>
+              <Text style={styles.brandName}>Zekra</Text>
+              <Text style={styles.brandProduct}>Vardiya Planı</Text>
+            </View>
+          ),
+          headerTitleAlign: 'center',
         }}
       />
       <Tabs.Screen
@@ -86,5 +93,23 @@ const styles = StyleSheet.create({
   },
   iconFocused: {
     opacity: 1,
+  },
+  brandHeader: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  brandName: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    lineHeight: 22,
+  },
+  brandProduct: {
+    color: 'rgba(255,255,255,0.82)',
+    fontSize: 11,
+    fontWeight: '500',
+    letterSpacing: 0.4,
+    marginTop: 1,
   },
 });
