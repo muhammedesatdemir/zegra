@@ -14,6 +14,7 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useScheduleStore, selectActiveTemplate } from '../src/stores';
 import { getMonthNameTR } from '../src/utils/turkish';
 import { getDayCount } from '../src/utils/date';
@@ -30,6 +31,7 @@ function formatISODate(year: number, month: number, day: number): string {
 export default function ReviseScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const shiftTypes = useScheduleStore((state) => state.shiftTypes);
   const templates = useScheduleStore((state) => state.templates);
@@ -187,7 +189,10 @@ export default function ReviseScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, dynamicStyles.container]}>
+    <ScrollView
+      style={[styles.container, dynamicStyles.container]}
+      contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) + 12 }}
+    >
       {/* Date Range Selection */}
       <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Tarih Aralığı</Text>
       <View style={[styles.section, dynamicStyles.section]}>

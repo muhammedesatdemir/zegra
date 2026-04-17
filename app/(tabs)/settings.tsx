@@ -21,6 +21,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useScheduleStore } from '../../src/stores';
 import { useTheme } from '../../src/context';
+import { PressableScale } from '../../src/components/ui';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 
@@ -170,16 +171,18 @@ export default function SettingsScreen() {
                 <Text style={[styles.rowLabel, { color: colors.text }]}>Tema</Text>
               </View>
               <View style={[styles.segmentedControl, { backgroundColor: colors.surfaceSecondary }]}>
-                <Pressable
-                  style={({ pressed }) => [
+                <PressableScale
+                  style={[
                     styles.segment,
                     settings.theme === 'light' && [
                       styles.segmentActive,
                       { backgroundColor: colors.surface },
                     ],
-                    pressed && styles.segmentPressed,
                   ]}
                   onPress={() => updateSettings({ theme: 'light' })}
+                  borderRadius={8}
+                  pressedScale={0.96}
+                  rippleColor="rgba(59,130,246,0.10)"
                 >
                   <Text
                     style={[
@@ -190,17 +193,19 @@ export default function SettingsScreen() {
                   >
                     Açık
                   </Text>
-                </Pressable>
-                <Pressable
-                  style={({ pressed }) => [
+                </PressableScale>
+                <PressableScale
+                  style={[
                     styles.segment,
                     settings.theme === 'dark' && [
                       styles.segmentActive,
                       { backgroundColor: colors.surface },
                     ],
-                    pressed && styles.segmentPressed,
                   ]}
                   onPress={() => updateSettings({ theme: 'dark' })}
+                  borderRadius={8}
+                  pressedScale={0.96}
+                  rippleColor="rgba(59,130,246,0.10)"
                 >
                   <Text
                     style={[
@@ -211,7 +216,7 @@ export default function SettingsScreen() {
                   >
                     Koyu
                   </Text>
-                </Pressable>
+                </PressableScale>
               </View>
             </View>
           </View>
@@ -222,14 +227,16 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
             PROGRAM
           </Text>
-          <Pressable
-            style={({ pressed }) => [
+          <PressableScale
+            style={[
               styles.card,
               styles.navigationCard,
               { backgroundColor: colors.surface },
-              pressed && styles.cardPressed,
             ]}
             onPress={() => router.push('/templates')}
+            borderRadius={16}
+            pressedScale={0.99}
+            rippleColor="rgba(139, 92, 246, 0.10)"
           >
             <View style={styles.rowLeft}>
               <View style={[styles.iconContainer, { backgroundColor: '#8B5CF620' }]}>
@@ -249,7 +256,7 @@ export default function SettingsScreen() {
             <View style={[styles.arrowContainer, { backgroundColor: colors.surfaceSecondary }]}>
               <Text style={[styles.arrow, { color: colors.textMuted }]}>›</Text>
             </View>
-          </Pressable>
+          </PressableScale>
         </View>
 
         {/* Veri Section */}
@@ -257,15 +264,14 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
             VERİ
           </Text>
-          <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.row,
-                styles.navigationRow,
-                pressed && styles.rowPressed,
-              ]}
+          <View style={[styles.card, styles.cardClip, { backgroundColor: colors.surface }]}>
+            <PressableScale
+              style={[styles.row, styles.navigationRow]}
               onPress={handleExport}
               disabled={isExporting}
+              pressedScale={0.995}
+              pressedOpacity={0.85}
+              rippleColor="rgba(16, 185, 129, 0.10)"
             >
               <View style={styles.rowLeft}>
                 <View style={[styles.iconContainer, { backgroundColor: '#10B98120' }]}>
@@ -281,17 +287,16 @@ export default function SettingsScreen() {
               <View style={[styles.arrowContainer, { backgroundColor: colors.surfaceSecondary }]}>
                 <Text style={[styles.arrow, { color: colors.textMuted }]}>›</Text>
               </View>
-            </Pressable>
+            </PressableScale>
 
             <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-            <Pressable
-              style={({ pressed }) => [
-                styles.row,
-                styles.dangerRow,
-                pressed && styles.rowPressed,
-              ]}
+            <PressableScale
+              style={[styles.row, styles.dangerRow]}
               onPress={handleClearData}
+              pressedScale={0.995}
+              pressedOpacity={0.85}
+              rippleColor="rgba(239, 68, 68, 0.10)"
             >
               <View style={styles.rowLeft}>
                 <View style={[styles.iconContainer, { backgroundColor: '#EF444420' }]}>
@@ -302,7 +307,7 @@ export default function SettingsScreen() {
                 </View>
                 <Text style={[styles.rowLabel, styles.dangerText]}>Tüm Verileri Sil</Text>
               </View>
-            </Pressable>
+            </PressableScale>
           </View>
         </View>
 
@@ -355,31 +360,31 @@ export default function SettingsScreen() {
               Vardiya planınız Excel uyumlu dosya olarak hazırlandı. Dosyayı paylaşabilir veya cihazınıza kaydedebilirsiniz.
             </Text>
             <View style={styles.modalActions}>
-              <Pressable
-                style={({ pressed }) => [
+              <PressableScale
+                style={[
                   styles.modalButton,
                   styles.modalButtonSecondary,
                   { backgroundColor: colors.surfaceSecondary },
-                  pressed && styles.buttonPressed,
                 ]}
                 onPress={() => setActiveModal(null)}
+                borderRadius={12}
+                pressedScale={0.98}
               >
                 <Text style={[styles.modalButtonText, { color: colors.text }]}>
                   Kapat
                 </Text>
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.modalButton,
-                  styles.modalButtonPrimary,
-                  pressed && styles.buttonPressed,
-                ]}
+              </PressableScale>
+              <PressableScale
+                style={[styles.modalButton, styles.modalButtonPrimary]}
                 onPress={handleShareExport}
+                borderRadius={12}
+                pressedScale={0.98}
+                rippleColor="rgba(255,255,255,0.22)"
               >
                 <Text style={[styles.modalButtonText, styles.modalButtonTextPrimary]}>
                   Paylaş
                 </Text>
-              </Pressable>
+              </PressableScale>
             </View>
           </View>
         </View>
@@ -407,31 +412,31 @@ export default function SettingsScreen() {
               Bu işlem geri alınamaz. Tüm vardiya planlarınız, notlarınız ve ayarlarınız kalıcı olarak silinecektir.
             </Text>
             <View style={styles.modalActions}>
-              <Pressable
-                style={({ pressed }) => [
+              <PressableScale
+                style={[
                   styles.modalButton,
                   styles.modalButtonSecondary,
                   { backgroundColor: colors.surfaceSecondary },
-                  pressed && styles.buttonPressed,
                 ]}
                 onPress={() => setActiveModal(null)}
+                borderRadius={12}
+                pressedScale={0.98}
               >
                 <Text style={[styles.modalButtonText, { color: colors.text }]}>
                   Vazgeç
                 </Text>
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.modalButton,
-                  styles.modalButtonDanger,
-                  pressed && styles.buttonPressed,
-                ]}
+              </PressableScale>
+              <PressableScale
+                style={[styles.modalButton, styles.modalButtonDanger]}
                 onPress={confirmDelete}
+                borderRadius={12}
+                pressedScale={0.98}
+                rippleColor="rgba(255,255,255,0.22)"
               >
                 <Text style={[styles.modalButtonText, styles.modalButtonTextPrimary]}>
                   Sil
                 </Text>
-              </Pressable>
+              </PressableScale>
             </View>
           </View>
         </View>
@@ -473,11 +478,16 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
+  // Clip inner pressables (for Android ripple bounds) without killing shadows on iOS
+  cardClip: {
+    overflow: Platform.OS === 'android' ? 'hidden' : 'visible',
+  },
   navigationCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
+    overflow: Platform.OS === 'android' ? 'hidden' : 'visible',
   },
   cardPressed: {
     opacity: 0.9,

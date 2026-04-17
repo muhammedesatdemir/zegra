@@ -5,8 +5,9 @@
  * Taller cards, bigger icons, stronger block feel.
  */
 
-import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useTheme } from '../../context';
+import { PressableScale } from '../ui';
 
 interface QuickAction {
   id: string;
@@ -30,14 +31,16 @@ export function QuickActions({ actions }: QuickActionsProps) {
       </Text>
       <View style={styles.row}>
         {actions.map((action) => (
-          <Pressable
+          <PressableScale
             key={action.id}
-            style={({ pressed }) => [
+            style={[
               styles.button,
               { backgroundColor: colors.surface },
-              pressed && styles.buttonPressed,
             ]}
             onPress={action.onPress}
+            borderRadius={16}
+            pressedScale={0.97}
+            rippleColor="rgba(59,130,246,0.10)"
           >
             <View style={[styles.iconContainer, { backgroundColor: colors.primaryLight }]}>
               <Text style={styles.icon}>{action.icon}</Text>
@@ -52,7 +55,7 @@ export function QuickActions({ actions }: QuickActionsProps) {
                 </Text>
               )}
             </View>
-          </Pressable>
+          </PressableScale>
         ))}
       </View>
     </View>
@@ -89,6 +92,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
+    overflow: Platform.OS === 'android' ? 'hidden' : 'visible',
   },
   buttonPressed: {
     transform: [{ scale: 0.97 }],

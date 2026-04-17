@@ -18,7 +18,9 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useScheduleStore, selectActiveTemplate } from '../src/stores';
+import { PressableScale } from '../src/components/ui';
 import { getMonthNameTR } from '../src/utils/turkish';
 import { getCurrentYearMonth, getTodayISO } from '../src/utils/date';
 import { useTheme } from '../src/context';
@@ -157,12 +159,14 @@ function SuccessModal({ visible, generated, skipped, onClose }: SuccessModalProp
           </View>
 
           {/* Action Button */}
-          <Pressable
+          <PressableScale
             style={successModalStyles.button}
             onPress={onClose}
+            rippleColor="rgba(255,255,255,0.2)"
+            borderRadius={14}
           >
             <Text style={successModalStyles.buttonText}>Tamam</Text>
-          </Pressable>
+          </PressableScale>
         </View>
       </View>
     </Modal>
@@ -268,6 +272,7 @@ const successModalStyles = StyleSheet.create({
 export default function GenerateScreen() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const templates = useScheduleStore((state) => state.templates);
   const shiftTypes = useScheduleStore((state) => state.shiftTypes);
@@ -417,7 +422,10 @@ export default function GenerateScreen() {
     <>
       <ScrollView
         style={[styles.container, { backgroundColor: colors.background }]}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[
+          styles.contentContainer,
+          { paddingBottom: Math.max(insets.bottom, 16) + 16 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* ========== ŞABLON SEÇİMİ ========== */}
@@ -432,7 +440,7 @@ export default function GenerateScreen() {
               const info = getTemplateDisplayInfo(template, shiftTypes);
 
               return (
-                <Pressable
+                <PressableScale
                   key={template.id}
                   style={[
                     styles.templateCard,
@@ -444,6 +452,8 @@ export default function GenerateScreen() {
                     isSelected && styles.templateCardSelected,
                   ]}
                   onPress={() => setSelectedTemplateId(template.id)}
+                  borderRadius={16}
+                  pressedScale={0.98}
                 >
                   {/* Seçili göstergesi */}
                   {isSelected && (
@@ -469,18 +479,18 @@ export default function GenerateScreen() {
                       {info.pattern}
                     </Text>
                   </View>
-                </Pressable>
+                </PressableScale>
               );
             })}
           </View>
 
           {/* Yeni Şablon Oluştur - Premium Hero Card */}
-          <Pressable
-            style={({ pressed }) => [
-              styles.createTemplateCard,
-              pressed && styles.createTemplateCardPressed,
-            ]}
+          <PressableScale
+            style={styles.createTemplateCard}
             onPress={handleCreateTemplate}
+            borderRadius={16}
+            pressedScale={0.98}
+            rippleColor="rgba(99, 102, 241, 0.14)"
           >
             <LinearGradient
               colors={isDark
@@ -520,7 +530,7 @@ export default function GenerateScreen() {
                 </Text>
               </View>
             </LinearGradient>
-          </Pressable>
+          </PressableScale>
         </View>
 
         {/* ========== DÖNEM SEÇİMİ ========== */}
@@ -534,7 +544,7 @@ export default function GenerateScreen() {
               {rangeOptions.map((option) => {
                 const isSelected = rangePreset === option.key;
                 return (
-                  <Pressable
+                  <PressableScale
                     key={option.key}
                     style={[
                       styles.rangeButton,
@@ -544,6 +554,9 @@ export default function GenerateScreen() {
                       },
                     ]}
                     onPress={() => setRangePreset(option.key)}
+                    borderRadius={10}
+                    pressedScale={0.96}
+                    rippleColor={isSelected ? 'rgba(255,255,255,0.18)' : 'rgba(59,130,246,0.10)'}
                   >
                     <Text style={[
                       styles.rangeButtonText,
@@ -551,7 +564,7 @@ export default function GenerateScreen() {
                     ]}>
                       {option.label}
                     </Text>
-                  </Pressable>
+                  </PressableScale>
                 );
               })}
             </View>
@@ -583,7 +596,7 @@ export default function GenerateScreen() {
               {startOptions.map((option) => {
                 const isSelected = startPoint === option.key;
                 return (
-                  <Pressable
+                  <PressableScale
                     key={option.key}
                     style={[
                       styles.startButtonPremium,
@@ -593,6 +606,9 @@ export default function GenerateScreen() {
                       isSelected && styles.startButtonPremiumSelected,
                     ]}
                     onPress={() => setStartPoint(option.key)}
+                    borderRadius={12}
+                    pressedScale={0.97}
+                    rippleColor={isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(59,130,246,0.10)'}
                   >
                     <Text style={[
                       styles.startButtonTextPremium,
@@ -600,7 +616,7 @@ export default function GenerateScreen() {
                     ]}>
                       {option.label}
                     </Text>
-                  </Pressable>
+                  </PressableScale>
                 );
               })}
             </View>
@@ -618,9 +634,12 @@ export default function GenerateScreen() {
           </Text>
 
           <View style={[styles.optionsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Pressable
+            <PressableScale
               style={styles.optionRowSingle}
               onPress={() => setPreserveCustomDays(!preserveCustomDays)}
+              borderRadius={16}
+              pressedScale={0.99}
+              pressedOpacity={0.96}
             >
               <View style={styles.optionContent}>
                 <Text style={[styles.optionLabel, { color: colors.text }]}>
@@ -639,7 +658,7 @@ export default function GenerateScreen() {
                   preserveCustomDays && styles.toggleKnobActive
                 ]} />
               </View>
-            </Pressable>
+            </PressableScale>
           </View>
         </View>
 
@@ -653,31 +672,33 @@ export default function GenerateScreen() {
 
         {/* ========== BUTONLAR ========== */}
         <View style={styles.actions}>
-          <Pressable
+          <PressableScale
             style={[styles.cancelButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
             onPress={() => router.back()}
+            borderRadius={14}
+            pressedScale={0.98}
           >
             <Text style={[styles.cancelButtonText, { color: colors.textMuted }]}>
               İptal
             </Text>
-          </Pressable>
+          </PressableScale>
 
-          <Pressable
+          <PressableScale
             style={[
               styles.generateButton,
               !selectedTemplateId && styles.generateButtonDisabled
             ]}
             onPress={handleGenerate}
             disabled={!selectedTemplateId}
+            borderRadius={14}
+            pressedScale={0.98}
+            rippleColor="rgba(255,255,255,0.22)"
           >
             <Text style={styles.generateButtonText}>
               {selectedMonths.length === 1 ? '1 Ay' : `${selectedMonths.length} Ay`} Oluştur
             </Text>
-          </Pressable>
+          </PressableScale>
         </View>
-
-        {/* Bottom padding */}
-        <View style={styles.bottomPadding} />
       </ScrollView>
 
       {/* Success Modal */}

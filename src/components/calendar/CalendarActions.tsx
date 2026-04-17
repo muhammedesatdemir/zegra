@@ -5,9 +5,10 @@
  * Single "Ay Olustur" button with subtle, modern design.
  */
 
-import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context';
+import { PressableScale } from '../ui';
 
 interface CalendarActionsProps {
   onGenerate: () => void;
@@ -27,12 +28,12 @@ export function CalendarActions({ onGenerate }: CalendarActionsProps) {
         },
       ]}
     >
-      <Pressable
-        style={({ pressed }) => [
-          styles.button,
-          pressed && styles.buttonPressed,
-        ]}
+      <PressableScale
+        style={styles.button}
         onPress={onGenerate}
+        borderRadius={14}
+        pressedScale={0.98}
+        rippleColor="rgba(255,255,255,0.22)"
       >
         {/* Plus Icon */}
         <View style={styles.iconContainer}>
@@ -40,7 +41,7 @@ export function CalendarActions({ onGenerate }: CalendarActionsProps) {
           <View style={styles.plusVertical} />
         </View>
         <Text style={styles.buttonText}>Ay Oluştur</Text>
-      </Pressable>
+      </PressableScale>
     </View>
   );
 }
@@ -64,11 +65,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 10,
     elevation: 4,
-  },
-  buttonPressed: {
-    transform: [{ scale: 0.98 }],
-    opacity: 0.9,
-    shadowOpacity: 0.15,
+    overflow: Platform.OS === 'android' ? 'hidden' : 'visible',
   },
   iconContainer: {
     width: 18,

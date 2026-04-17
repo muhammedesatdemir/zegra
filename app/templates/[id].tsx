@@ -18,8 +18,10 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useScheduleStore } from '../../src/stores';
 import { useTheme } from '../../src/context';
+import { PressableScale } from '../../src/components/ui';
 
 // ============================================
 // CUSTOM ALERT MODAL
@@ -228,6 +230,7 @@ export default function TemplateDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const isNew = id === 'new';
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const templates = useScheduleStore((state) => state.templates);
   const allShiftTypes = useScheduleStore((state) => state.shiftTypes);
@@ -415,9 +418,9 @@ export default function TemplateDetailScreen() {
                 const isSelected = selectedStepIndex === index;
                 const shiftColor = getShiftColor(step);
                 return (
-                  <Pressable
+                  <PressableScale
                     key={index}
-                    style={({ pressed }) => [
+                    style={[
                       styles.stepCard,
                       { backgroundColor: colors.surface, borderColor: shiftColor },
                       isSelected && [
@@ -431,10 +434,12 @@ export default function TemplateDetailScreen() {
                           elevation: 8,
                         },
                       ],
-                      pressed && { transform: [{ scale: 0.96 }] },
                     ]}
                     onPress={() => isEditable && setSelectedStepIndex(index)}
                     onLongPress={() => isEditable && removeStep(index)}
+                    borderRadius={12}
+                    pressedScale={0.96}
+                    rippleColor={`${shiftColor}26`}
                   >
                     <Text style={[styles.stepIndex, { color: isSelected ? shiftColor : colors.textMuted }]}>
                       {index + 1}
@@ -442,23 +447,25 @@ export default function TemplateDetailScreen() {
                     <View style={[styles.stepBadge, { backgroundColor: shiftColor }]}>
                       <Text style={styles.stepCode}>{getShiftShortName(step)}</Text>
                     </View>
-                  </Pressable>
+                  </PressableScale>
                 );
               })}
               {isEditable && (
-                <Pressable
-                  style={({ pressed }) => [
+                <PressableScale
+                  style={[
                     styles.addStepCard,
                     { borderColor: colors.border },
-                    pressed && { backgroundColor: colors.surfaceSecondary, transform: [{ scale: 0.95 }] },
                   ]}
                   onPress={addStep}
+                  borderRadius={12}
+                  pressedScale={0.95}
+                  rippleColor="rgba(59,130,246,0.12)"
                 >
                   <View style={[styles.addStepIcon, { backgroundColor: colors.primary }]}>
                     <Text style={styles.addStepPlus}>+</Text>
                   </View>
                   <Text style={[styles.addStepLabel, { color: colors.textMuted }]}>Gün Ekle</Text>
-                </Pressable>
+                </PressableScale>
               )}
             </View>
 
@@ -478,20 +485,22 @@ export default function TemplateDetailScreen() {
             </Text>
             <View style={[styles.shiftSelectorBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               {shiftTypes.map((shift) => (
-                <Pressable
+                <PressableScale
                   key={shift.id}
-                  style={({ pressed }) => [
+                  style={[
                     styles.shiftBarItem,
                     { borderColor: shift.color },
-                    pressed && { transform: [{ scale: 0.95 }], opacity: 0.85 },
                   ]}
                   onPress={() => handleStepChange(shift.code)}
+                  borderRadius={10}
+                  pressedScale={0.95}
+                  rippleColor={`${shift.color}26`}
                 >
                   <View style={[styles.shiftBarBadge, { backgroundColor: shift.color }]}>
                     <Text style={styles.shiftBarCode}>{shift.shortName}</Text>
                   </View>
                   <Text style={[styles.shiftBarName, { color: colors.text }]}>{shift.name}</Text>
-                </Pressable>
+                </PressableScale>
               ))}
             </View>
           </View>
@@ -525,15 +534,15 @@ export default function TemplateDetailScreen() {
 
         {/* ========== SİL BUTONU ========== */}
         {!isNew && isEditable && (
-          <Pressable
-            style={({ pressed }) => [
-              styles.deleteButton,
-              pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] },
-            ]}
+          <PressableScale
+            style={styles.deleteButton}
             onPress={handleDelete}
+            borderRadius={14}
+            pressedScale={0.98}
+            rippleColor="rgba(220, 38, 38, 0.12)"
           >
             <Text style={styles.deleteButtonText}>Şablonu Sil</Text>
-          </Pressable>
+          </PressableScale>
         )}
 
         <View style={styles.bottomSpacer} />
@@ -541,26 +550,36 @@ export default function TemplateDetailScreen() {
 
       {/* ========== ALT AKSİYON ALANI ========== */}
       {isEditable && (
-        <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-          <Pressable
-            style={({ pressed }) => [
+        <View
+          style={[
+            styles.footer,
+            {
+              backgroundColor: colors.surface,
+              borderTopColor: colors.border,
+              paddingBottom: Math.max(insets.bottom, 16),
+            },
+          ]}
+        >
+          <PressableScale
+            style={[
               styles.cancelButton,
               { backgroundColor: colors.surface, borderColor: colors.border },
-              pressed && { opacity: 0.7, transform: [{ scale: 0.98 }] },
             ]}
             onPress={() => router.back()}
+            borderRadius={14}
+            pressedScale={0.98}
           >
             <Text style={[styles.cancelButtonText, { color: colors.textMuted }]}>İptal</Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [
-              styles.saveButton,
-              pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
-            ]}
+          </PressableScale>
+          <PressableScale
+            style={styles.saveButton}
             onPress={handleSave}
+            borderRadius={14}
+            pressedScale={0.98}
+            rippleColor="rgba(255,255,255,0.22)"
           >
             <Text style={styles.saveButtonText}>{isNew ? 'Oluştur' : 'Kaydet'}</Text>
-          </Pressable>
+          </PressableScale>
         </View>
       )}
 
@@ -857,8 +876,8 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     gap: 12,
-    padding: 16,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 16,
+    paddingHorizontal: 16,
+    paddingTop: 14,
     borderTopWidth: 1,
     ...Platform.select({
       ios: {
