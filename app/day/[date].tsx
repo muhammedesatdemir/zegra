@@ -18,13 +18,16 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useScheduleStore } from '../../src/stores';
-import { formatDateTR, parseISODate } from '../../src/utils/date';
+import { formatDateTR, parseISODate, isValidISODate } from '../../src/utils/date';
 import { normalizeCustomTime } from '../../src/utils/shiftTime';
 import { useTheme } from '../../src/context';
 import type { PlannedDay } from '../../src/types';
 
 export default function DayEditScreen() {
-  const { date } = useLocalSearchParams<{ date: string }>();
+  const { date: rawDate } = useLocalSearchParams<{ date: string }>();
+  // Validate ISO format — parseISODate throws on invalid input which would
+  // crash the screen if a malformed path param is ever passed.
+  const date = rawDate && isValidISODate(rawDate) ? rawDate : null;
   const router = useRouter();
   const { colors } = useTheme();
 
@@ -66,8 +69,20 @@ export default function DayEditScreen() {
 
   if (!date) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, styles.errorContainer, { backgroundColor: colors.background }]}>
         <Text style={[styles.errorText, { color: colors.text }]}>Geçersiz tarih</Text>
+        <Pressable
+          style={({ pressed }) => [
+            styles.cancelButton,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+            pressed && styles.buttonPressed,
+          ]}
+          onPress={() => router.back()}
+        >
+          <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>
+            Geri
+          </Text>
+        </Pressable>
       </View>
     );
   }
@@ -91,15 +106,24 @@ export default function DayEditScreen() {
       selectedShiftType?.endTime ?? null
     );
 
+    // Preserve cycleIndex and templateId if the shift code did not change —
+    // this keeps month-to-month phase continuity correct when only the note
+    // or custom times are edited.
+    const shiftUnchanged =
+      !!existingDay && existingDay.shiftCode === selectedShiftCode;
+
     const newDay: PlannedDay = {
       date,
       shiftCode: selectedShiftCode,
       isLocked: isProtected,
       source: 'manual',
-      templateId: null,
+      templateId: shiftUnchanged && existingDay ? existingDay.templateId : null,
       note: note.trim() || null,
       customStartTime: normalizedStart,
       customEndTime: normalizedEnd,
+      ...(shiftUnchanged && existingDay && existingDay.cycleIndex !== undefined
+        ? { cycleIndex: existingDay.cycleIndex }
+        : {}),
     };
 
     setPlannedDay(newDay);
@@ -350,10 +374,15 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
   },
+  errorContainer: {
+    padding: 16,
+    gap: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   errorText: {
     fontSize: 16,
     textAlign: 'center',
-    marginTop: 50,
   },
 
   // Summary Card

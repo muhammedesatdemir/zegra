@@ -68,14 +68,12 @@ export class FileRepository implements IScheduleRepository {
       const file = getStorageFile();
 
       if (!file.exists) {
-        console.log('[Persist] No data file, starting fresh');
         return;
       }
 
       const raw = file.textSync();
 
       if (!raw || raw.length === 0) {
-        console.log('[Persist] Empty data file, using defaults');
         return;
       }
 
@@ -95,11 +93,10 @@ export class FileRepository implements IScheduleRepository {
           this.settings = { ...DEFAULT_SETTINGS, ...data.settings };
         }
       }
-
-      const dayCount = Object.keys(this.plannedDays).length;
-      console.log('[Persist] Loaded', dayCount, 'days from disk');
     } catch (error) {
-      console.error('[Persist] Load failed, using defaults:', error);
+      if (__DEV__) {
+        console.error('[Persist] Load failed, using defaults:', error);
+      }
     }
   }
 
@@ -120,11 +117,10 @@ export class FileRepository implements IScheduleRepository {
 
       const json = JSON.stringify(data);
       file.write(json);
-
-      const dayCount = Object.keys(this.plannedDays).length;
-      console.log('[Persist] Saved', dayCount, 'days (' + json.length + ' bytes)');
     } catch (error) {
-      console.error('[Persist] Save failed:', error);
+      if (__DEV__) {
+        console.error('[Persist] Save failed:', error);
+      }
     }
   }
 

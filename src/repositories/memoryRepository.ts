@@ -187,6 +187,12 @@ export class MemoryRepository implements IScheduleRepository {
     if (this.templates.length === 0) {
       this.templates = [...DEFAULT_TEMPLATES];
     }
+    if (!this.settings.activeTemplateId && this.templates.length > 0) {
+      const defaultActive = this.templates.find((t) => t.isActive);
+      if (defaultActive) {
+        this.settings.activeTemplateId = defaultActive.id;
+      }
+    }
   }
 }
 

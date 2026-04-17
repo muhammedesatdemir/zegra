@@ -21,7 +21,7 @@ import {
   previewGeneration,
   previewRevision,
 } from '../services/schedulingEngine';
-import { getTodayISO, getCurrentYearMonth } from '../utils/date';
+import { getTodayISO, getCurrentYearMonth, getPreviousMonthLastDay } from '../utils/date';
 
 // ============================================
 // STATE TYPES
@@ -205,10 +205,11 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       // Kullanıcı yeni şablon seçip "Bugünden" dediğinde, şablonun başından başlamak istiyor
       phaseOffset = 0;
     } else {
-      // Starting from day 1, look at last day of previous month
-      const prevMonthLastDay = new Date(year, month - 1, 0); // Last day of previous month
-      const prevDateStr = prevMonthLastDay.toISOString().split('T')[0];
-      const prevDay = state.plannedDays[prevDateStr ?? ''];
+      // Starting from day 1, look at last day of previous month.
+      // Use local-date based ISO string — toISOString() uses UTC and
+      // shifts the date by the timezone offset (breaks cycle continuity in TR).
+      const prevDateStr = getPreviousMonthLastDay(year, month);
+      const prevDay = state.plannedDays[prevDateStr];
       phaseOffset = calculatePhaseForNewMonth(
         activeTemplate,
         prevDay?.shiftCode ?? null,

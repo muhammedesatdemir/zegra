@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useScheduleStore } from '../../src/stores';
 import { useTheme } from '../../src/context';
 import { PressableScale } from '../../src/components/ui';
-import * as FileSystem from 'expo-file-system/legacy';
+import { File as ExpoFile, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
 type ModalType = 'export' | 'delete' | null;
@@ -65,7 +65,10 @@ export default function SettingsScreen() {
       const day = plannedDays[dateStr];
       if (!day) continue;
       const shift = shiftTypes.find(st => st.code === day.shiftCode);
-      const date = new Date(dateStr);
+      // Parse as local date — new Date('YYYY-MM-DD') treats the string as UTC
+      // which can shift the weekday by one in non-UTC timezones.
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const date = new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1);
       const dayName = dayNames[date.getDay()] ?? '';
 
       const row = [
@@ -89,15 +92,21 @@ export default function SettingsScreen() {
 
     try {
       const csvContent = generateExcelContent();
-      const fileName = `zegra-vardiya-${new Date().toISOString().split('T')[0]}.csv`;
-      const filePath = `${FileSystem.cacheDirectory}${fileName}`;
-
-      await FileSystem.writeAsStringAsync(filePath, csvContent);
+      // Use local Y-M-D, not toISOString, to keep the filename date in the
+      // user's timezone (matches the day the user tapped "export").
+      const now = new Date();
+      const fileDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const fileName = `zegra-vardiya-${fileDate}.csv`;
+      const file = new ExpoFile(Paths.cache, fileName);
+      file.write(csvContent);
+      const filePath = file.uri;
 
       setExportFilePath(filePath);
       setActiveModal('export');
     } catch (error) {
-      console.error('Export failed:', error);
+      if (__DEV__) {
+        console.error('Export failed:', error);
+      }
       Alert.alert('Hata', 'Dosya oluşturulurken bir hata oluştu.');
     } finally {
       setIsExporting(false);
@@ -119,7 +128,9 @@ export default function SettingsScreen() {
         Alert.alert('Hata', 'Paylaşım bu cihazda desteklenmiyor.');
       }
     } catch (error) {
-      console.error('Share failed:', error);
+      if (__DEV__) {
+        console.error('Share failed:', error);
+      }
     }
     setActiveModal(null);
   };
@@ -132,7 +143,9 @@ export default function SettingsScreen() {
       // User can choose to save to Files app from share sheet
       await handleShareExport();
     } catch (error) {
-      console.error('Save failed:', error);
+      if (__DEV__) {
+        console.error('Save failed:', error);
+      }
     }
   };
 
