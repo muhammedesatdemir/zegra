@@ -241,36 +241,34 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
             PROGRAM
           </Text>
-          <PressableScale
-            style={[
-              styles.card,
-              styles.navigationCard,
-              { backgroundColor: colors.surface },
-            ]}
-            onPress={() => router.push('/templates')}
-            borderRadius={16}
-            pressedScale={0.99}
-            rippleColor="rgba(139, 92, 246, 0.10)"
-          >
-            <View style={styles.rowLeft}>
-              <View style={[styles.iconContainer, { backgroundColor: '#8B5CF620' }]}>
-                <View style={styles.templateIcon}>
-                  <View style={[styles.templateLine, { backgroundColor: '#8B5CF6' }]} />
-                  <View style={[styles.templateLine, styles.templateLineShort, { backgroundColor: '#8B5CF6' }]} />
-                  <View style={[styles.templateLine, { backgroundColor: '#8B5CF6' }]} />
+          <View style={[styles.card, styles.cardClip, { backgroundColor: colors.surface }]}>
+            <PressableScale
+              style={[styles.row, styles.navigationRow]}
+              onPress={() => router.push('/templates')}
+              borderRadius={16}
+              pressedScale={0.99}
+              rippleColor="rgba(139, 92, 246, 0.10)"
+            >
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: '#8B5CF620' }]}>
+                  <View style={styles.templateIcon}>
+                    <View style={[styles.templateLine, { backgroundColor: '#8B5CF6' }]} />
+                    <View style={[styles.templateLine, styles.templateLineShort, { backgroundColor: '#8B5CF6' }]} />
+                    <View style={[styles.templateLine, { backgroundColor: '#8B5CF6' }]} />
+                  </View>
+                </View>
+                <View>
+                  <Text style={[styles.rowLabel, { color: colors.text }]}>Aktif Şablon</Text>
+                  <Text style={[styles.rowSubtext, { color: colors.textMuted }]}>
+                    {activeTemplate?.name ?? 'Seçilmedi'}
+                  </Text>
                 </View>
               </View>
-              <View>
-                <Text style={[styles.rowLabel, { color: colors.text }]}>Aktif Şablon</Text>
-                <Text style={[styles.rowSubtext, { color: colors.textMuted }]}>
-                  {activeTemplate?.name ?? 'Seçilmedi'}
-                </Text>
+              <View style={[styles.arrowContainer, { backgroundColor: colors.surfaceSecondary }]}>
+                <Text style={[styles.arrow, { color: colors.textMuted }]}>›</Text>
               </View>
-            </View>
-            <View style={[styles.arrowContainer, { backgroundColor: colors.surfaceSecondary }]}>
-              <Text style={[styles.arrow, { color: colors.textMuted }]}>›</Text>
-            </View>
-          </PressableScale>
+            </PressableScale>
+          </View>
         </View>
 
         {/* Veri Section */}
@@ -501,13 +499,6 @@ const styles = StyleSheet.create({
   },
   // Clip inner pressables (for Android ripple bounds) without killing shadows on iOS
   cardClip: {
-    overflow: Platform.OS === 'android' ? 'hidden' : 'visible',
-  },
-  navigationCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
     overflow: Platform.OS === 'android' ? 'hidden' : 'visible',
   },
   cardPressed: {

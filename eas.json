@@ -41,6 +41,12 @@
       "ios": {
         "distribution": "store"
       }
+    },
+    "production-apk": {
+      "extends": "base",
+      "android": {
+        "buildType": "apk"
+      }
     }
   }
 }
