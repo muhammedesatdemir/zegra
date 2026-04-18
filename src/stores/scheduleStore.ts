@@ -22,6 +22,7 @@ import {
   previewRevision,
 } from '../services/schedulingEngine';
 import { getTodayISO, getCurrentYearMonth, getPreviousMonthLastDay } from '../utils/date';
+import { mark as startupMark } from '../utils/startupTimer';
 
 // ============================================
 // STATE TYPES
@@ -94,29 +95,37 @@ interface ScheduleState {
 // STORE CREATION
 // ============================================
 
+// Hydrate synchronously at module load so the first render already has data.
+// Repository is a singleton with sync disk read (file.textSync) — safe to run eagerly.
+startupMark('store hydrate: begin (repo init + sync file read)');
+const initialRepo = getRepository();
+const initialShiftTypes = initialRepo.getShiftTypes();
+const initialTemplates = initialRepo.getTemplates();
+const initialPlannedDays = initialRepo.getAllPlannedDays();
+const initialSettings = initialRepo.getSettings();
+startupMark(
+  `store hydrate: done (${initialShiftTypes.length} shifts, ` +
+    `${initialTemplates.length} templates, ` +
+    `${Object.keys(initialPlannedDays).length} planned days)`,
+);
+
 export const useScheduleStore = create<ScheduleState>((set, get) => ({
-  // Initial state
-  shiftTypes: [],
-  templates: [],
-  plannedDays: {},
-  settings: {
-    activeTemplateId: null,
-    weekStartsOnMonday: true,
-    theme: 'light',
-    showOffVariants: false,
-    onboardingDone: false,
-  },
+  // Initial state — already hydrated from disk
+  shiftTypes: initialShiftTypes,
+  templates: initialTemplates,
+  plannedDays: initialPlannedDays,
+  settings: initialSettings,
   selectedDate: getTodayISO(),
   viewYear: getCurrentYearMonth().year,
   viewMonth: getCurrentYearMonth().month,
-  isLoading: true,
+  isLoading: false,
 
   // ============================================
   // DATA LOADING
   // ============================================
 
   loadAllData: () => {
-    // getRepository() triggers sync load from disk on first call
+    // No-op after module-load hydration; kept for callers that re-sync (e.g. clearAllData).
     const repo = getRepository();
     set({
       shiftTypes: repo.getShiftTypes(),

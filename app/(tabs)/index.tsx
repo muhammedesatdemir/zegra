@@ -11,12 +11,13 @@
  * - "İyi tasarlanmış" ürün hissi vermeli
  */
 
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { useScheduleStore, selectTodayShift } from '../../src/stores';
 import { formatDateTR, getTodayISO, addDaysToDate, parseISODate } from '../../src/utils/date';
 import { useTheme } from '../../src/context';
+import { mark as startupMark } from '../../src/utils/startupTimer';
 import {
   TodayShiftCard,
   UpcomingDays,
@@ -25,6 +26,7 @@ import {
 } from '../../src/components/home';
 
 export default function HomeScreen() {
+  startupMark('home screen: mount');
   const router = useRouter();
   const { colors } = useTheme();
   const today = getTodayISO();
@@ -32,7 +34,6 @@ export default function HomeScreen() {
   const todayShift = useScheduleStore(selectTodayShift);
   const plannedDays = useScheduleStore((state) => state.plannedDays);
   const shiftTypes = useScheduleStore((state) => state.shiftTypes);
-  const isLoading = useScheduleStore((state) => state.isLoading);
 
   // Get shift type details for today
   const todayShiftType = todayShift
@@ -160,18 +161,11 @@ export default function HomeScreen() {
     },
   ];
 
-  if (isLoading) {
-    return (
-      <View style={[styles.container, styles.centerContent, { backgroundColor: colors.background }]}>
-        <Text style={[styles.loadingText, { color: colors.textMuted }]}>
-          Yükleniyor...
-        </Text>
-      </View>
-    );
-  }
-
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View
+      style={[styles.container, { backgroundColor: colors.background }]}
+      onLayout={() => startupMark('home screen: first paint (onLayout)')}
+    >
       {/* Today's Shift - Hero Card with context */}
       <TodayShiftCard
         date={today}
@@ -201,17 +195,5 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     paddingTop: 12,
-  },
-  centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 15,
-    fontWeight: '500',
-    ...Platform.select({
-      ios: { fontFamily: 'System' },
-      android: { fontFamily: 'sans-serif' },
-    }),
   },
 });
