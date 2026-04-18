@@ -8,11 +8,6 @@
     "userInterfaceStyle": "automatic",
     "scheme": "vardiyaplani",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/icon2.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0B1026"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.vardiyaplani.app",
@@ -35,7 +30,16 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icon2.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#0B1026",
+          "imageWidth": 200
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

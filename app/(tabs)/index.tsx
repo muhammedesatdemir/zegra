@@ -18,6 +18,7 @@ import { useScheduleStore, selectTodayShift } from '../../src/stores';
 import { formatDateTR, getTodayISO, addDaysToDate, parseISODate } from '../../src/utils/date';
 import { useTheme } from '../../src/context';
 import { mark as startupMark } from '../../src/utils/startupTimer';
+import { notifyFirstScreenReady } from '../../src/utils/splashController';
 import {
   TodayShiftCard,
   UpcomingDays,
@@ -161,10 +162,17 @@ export default function HomeScreen() {
     },
   ];
 
+  const handleFirstLayout = () => {
+    startupMark('home screen: first paint (onLayout)');
+    // Signal the splash controller that real UI is painted — it will
+    // dismiss the native splash after one rAF tick.
+    notifyFirstScreenReady();
+  };
+
   return (
     <View
       style={[styles.container, { backgroundColor: colors.background }]}
-      onLayout={() => startupMark('home screen: first paint (onLayout)')}
+      onLayout={handleFirstLayout}
     >
       {/* Today's Shift - Hero Card with context */}
       <TodayShiftCard
