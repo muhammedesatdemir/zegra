@@ -19,7 +19,7 @@
     },
     "android": {
       "package": "com.vardiyaplani.app",
-      "versionCode": 5,
+      "versionCode": 6,
       "adaptiveIcon": {
         "foregroundImage": "./icon.png",
         "backgroundColor": "#0B1026"
