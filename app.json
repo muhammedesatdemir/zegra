@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.vardiyaplani.app",
+      "bundleIdentifier": "com.demrivo.vardiyaplani",
       "buildNumber": "1",
       "infoPlist": {
         "CFBundleAllowMixedLocalizations": true,
@@ -18,8 +18,8 @@
       }
     },
     "android": {
-      "package": "com.vardiyaplani.app",
-      "versionCode": 6,
+      "package": "com.demrivo.vardiyaplani",
+      "versionCode": 8,
       "adaptiveIcon": {
         "foregroundImage": "./icon.png",
         "backgroundColor": "#0B1026"
@@ -49,13 +49,6 @@
         "projectId": "9db300d9-669f-474f-98cf-4d9184605880"
       },
       "router": {}
-    },
-    "owner": "",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": ""
     }
   }
 }
