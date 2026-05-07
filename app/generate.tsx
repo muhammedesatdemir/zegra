@@ -29,6 +29,9 @@ import { isOffCode } from '../src/constants/shifts';
 type StartPoint = 'month_start' | 'today';
 type RangePreset = 'this_month' | 'next_3_months' | 'next_6_months' | 'until_year_end';
 
+const SEGMENT_TRACK_PADDING = 4;
+const SEGMENT_GAP = 2;
+
 // Success modal state tipi
 interface SuccessModalState {
   visible: boolean;
@@ -290,6 +293,7 @@ export default function GenerateScreen() {
   const [startPoint, setStartPoint] = useState<StartPoint>('month_start');
   const [rangePreset, setRangePreset] = useState<RangePreset>('this_month');
   const [preserveCustomDays, setPreserveCustomDays] = useState(true);
+  const [rangeTrackWidth, setRangeTrackWidth] = useState(0);
 
   // Success modal state
   const [successModal, setSuccessModal] = useState<SuccessModalState>({
@@ -403,6 +407,7 @@ export default function GenerateScreen() {
     { key: 'next_6_months', label: '6 Ay' },
     { key: 'until_year_end', label: 'Yıl Sonu' },
   ];
+  const rangeSelectedIndex = rangeOptions.findIndex(o => o.key === rangePreset);
 
   // Başlangıç noktası seçenekleri (2 buton - simetrik)
   const startOptions: { key: StartPoint; label: string; description: string }[] = [
@@ -540,23 +545,41 @@ export default function GenerateScreen() {
           </Text>
 
           <View style={[styles.rangeCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.segmentTrack, { backgroundColor: colors.surfaceSecondary }]}>
+            <View
+              style={[styles.segmentTrack, { backgroundColor: colors.surfaceSecondary }]}
+              onLayout={(e) => setRangeTrackWidth(e.nativeEvent.layout.width)}
+            >
+              {/* Single sliding indicator — tek kaynaktan yönetilen seçili background */}
+              {rangeTrackWidth > 0 && rangeSelectedIndex >= 0 && (() => {
+                const innerWidth = rangeTrackWidth - SEGMENT_TRACK_PADDING * 2;
+                const totalGap = SEGMENT_GAP * (rangeOptions.length - 1);
+                const itemWidth = (innerWidth - totalGap) / rangeOptions.length;
+                const left = SEGMENT_TRACK_PADDING + rangeSelectedIndex * (itemWidth + SEGMENT_GAP);
+                return (
+                  <View
+                    pointerEvents="none"
+                    style={[
+                      styles.segmentIndicator,
+                      {
+                        backgroundColor: colors.primary,
+                        width: itemWidth,
+                        left,
+                        borderRadius: 9,
+                      },
+                    ]}
+                  />
+                );
+              })()}
+
               {rangeOptions.map((option) => {
                 const isSelected = rangePreset === option.key;
                 return (
                   <PressableScale
                     key={option.key}
-                    style={[
-                      styles.segmentItem,
-                      isSelected && [
-                        styles.segmentItemSelected,
-                        { backgroundColor: colors.primary },
-                      ],
-                    ]}
+                    style={styles.segmentItem}
                     onPress={() => setRangePreset(option.key)}
-                    borderRadius={9}
-                    pressedScale={0.96}
-                    pressedOpacity={isSelected ? 0.92 : 0.8}
+                    pressedScale={1}
+                    pressedOpacity={1}
                     rippleColor={isSelected ? 'rgba(255,255,255,0.18)' : 'rgba(59,130,246,0.08)'}
                   >
                     <Text
@@ -609,15 +632,12 @@ export default function GenerateScreen() {
                     style={[
                       styles.segmentItem,
                       styles.segmentItemLarge,
-                      isSelected && [
-                        styles.segmentItemSelected,
-                        { backgroundColor: colors.primary },
-                      ],
+                      { backgroundColor: isSelected ? colors.primary : 'transparent' },
+                      isSelected && styles.segmentItemSelected,
                     ]}
                     onPress={() => setStartPoint(option.key)}
-                    borderRadius={10}
-                    pressedScale={0.97}
-                    pressedOpacity={isSelected ? 0.92 : 0.8}
+                    pressedScale={1}
+                    pressedOpacity={1}
                     rippleColor={isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(59,130,246,0.08)'}
                   >
                     <Text
@@ -893,10 +913,17 @@ const styles = StyleSheet.create({
   // Segmented control (single-select group) — shared between Dönem & Başlangıç
   segmentTrack: {
     flexDirection: 'row',
-    padding: 4,
+    padding: SEGMENT_TRACK_PADDING,
     margin: 8,
     borderRadius: 12,
-    gap: 2,
+    gap: SEGMENT_GAP,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  segmentIndicator: {
+    position: 'absolute',
+    top: SEGMENT_TRACK_PADDING,
+    bottom: SEGMENT_TRACK_PADDING,
   },
   segmentItem: {
     flex: 1,
@@ -919,9 +946,6 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.22,
         shadowRadius: 4,
-      },
-      android: {
-        elevation: 2,
       },
     }),
   },
