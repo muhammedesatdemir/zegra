@@ -294,6 +294,7 @@ export default function GenerateScreen() {
   const [rangePreset, setRangePreset] = useState<RangePreset>('this_month');
   const [preserveCustomDays, setPreserveCustomDays] = useState(true);
   const [rangeTrackWidth, setRangeTrackWidth] = useState(0);
+  const [startTrackWidth, setStartTrackWidth] = useState(0);
 
   // Success modal state
   const [successModal, setSuccessModal] = useState<SuccessModalState>({
@@ -422,6 +423,7 @@ export default function GenerateScreen() {
       description: 'Bugünden itibaren doldurur'
     },
   ];
+  const startSelectedIndex = startOptions.findIndex(o => o.key === startPoint);
 
   return (
     <>
@@ -623,18 +625,38 @@ export default function GenerateScreen() {
           </Text>
 
           <View style={[styles.startCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.segmentTrack, { backgroundColor: colors.surfaceSecondary }]}>
+            <View
+              style={[styles.segmentTrack, { backgroundColor: colors.surfaceSecondary }]}
+              onLayout={(e) => setStartTrackWidth(e.nativeEvent.layout.width)}
+            >
+              {/* Single sliding indicator — tek kaynaktan yönetilen seçili background */}
+              {startTrackWidth > 0 && startSelectedIndex >= 0 && (() => {
+                const innerWidth = startTrackWidth - SEGMENT_TRACK_PADDING * 2;
+                const totalGap = SEGMENT_GAP * (startOptions.length - 1);
+                const itemWidth = (innerWidth - totalGap) / startOptions.length;
+                const left = SEGMENT_TRACK_PADDING + startSelectedIndex * (itemWidth + SEGMENT_GAP);
+                return (
+                  <View
+                    pointerEvents="none"
+                    style={[
+                      styles.segmentIndicator,
+                      {
+                        backgroundColor: colors.primary,
+                        width: itemWidth,
+                        left,
+                        borderRadius: 10,
+                      },
+                    ]}
+                  />
+                );
+              })()}
+
               {startOptions.map((option) => {
                 const isSelected = startPoint === option.key;
                 return (
                   <PressableScale
                     key={option.key}
-                    style={[
-                      styles.segmentItem,
-                      styles.segmentItemLarge,
-                      { backgroundColor: isSelected ? colors.primary : 'transparent' },
-                      isSelected && styles.segmentItemSelected,
-                    ]}
+                    style={[styles.segmentItem, styles.segmentItemLarge]}
                     onPress={() => setStartPoint(option.key)}
                     pressedScale={1}
                     pressedOpacity={1}
