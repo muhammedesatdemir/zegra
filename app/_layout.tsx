@@ -109,6 +109,12 @@ function NavigationContent() {
             title: 'Şablon Düzenle',
           }}
         />
+        <Stack.Screen
+          name="shift-times"
+          options={{
+            title: 'Vardiya Saatleri',
+          }}
+        />
       </Stack>
     </View>
   );

@@ -268,6 +268,35 @@ export default function SettingsScreen() {
                 <Text style={[styles.arrow, { color: colors.textMuted }]}>›</Text>
               </View>
             </PressableScale>
+
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+            <PressableScale
+              style={[styles.row, styles.navigationRow]}
+              onPress={() => router.push('/shift-times')}
+              borderRadius={16}
+              pressedScale={0.99}
+              rippleColor="rgba(59, 130, 246, 0.10)"
+            >
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: '#3B82F620' }]}>
+                  <View style={styles.clockIcon}>
+                    <View style={[styles.clockHandHour, { backgroundColor: '#3B82F6' }]} />
+                    <View style={[styles.clockHandMinute, { backgroundColor: '#3B82F6' }]} />
+                    <View style={[styles.clockCenter, { backgroundColor: '#3B82F6' }]} />
+                  </View>
+                </View>
+                <View>
+                  <Text style={[styles.rowLabel, { color: colors.text }]}>Vardiya Saatleri</Text>
+                  <Text style={[styles.rowSubtext, { color: colors.textMuted }]}>
+                    Sabah, öğle ve gece saatlerini özelleştir
+                  </Text>
+                </View>
+              </View>
+              <View style={[styles.arrowContainer, { backgroundColor: colors.surfaceSecondary }]}>
+                <Text style={[styles.arrow, { color: colors.textMuted }]}>›</Text>
+              </View>
+            </PressableScale>
           </View>
         </View>
 
@@ -332,13 +361,13 @@ export default function SettingsScreen() {
             <View style={styles.aboutHeader}>
               <Text style={[styles.aboutBrand, { color: colors.text }]}>Zekra</Text>
               <Text style={[styles.aboutVersion, { color: colors.textSecondary }]}>
-                Sürüm 1.0.0
+                Sürüm 1.0.2
               </Text>
             </View>
 
             <View style={[styles.aboutDivider, { backgroundColor: colors.border }]} />
 
-            <Text style={[styles.aboutLine, { color: colors.textSecondary }]}>
+            <Text style={[styles.aboutLine, styles.aboutLinePrimary, { color: colors.text }]}>
               <Text style={styles.aboutLineLabel}>Geliştiren: </Text>
               Muhammed Esat Demir
             </Text>
@@ -473,18 +502,18 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 8,
   },
 
   // Section
   section: {
-    marginBottom: 20,
+    marginBottom: 14,
   },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
     letterSpacing: 0.5,
-    marginBottom: 10,
+    marginBottom: 8,
     marginLeft: 4,
   },
 
@@ -511,7 +540,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   navigationRow: {
     borderRadius: 16,
@@ -579,6 +609,33 @@ const styles = StyleSheet.create({
   },
   templateLineShort: {
     width: '70%',
+  },
+
+  // Clock Icon — minimal analog clock with two hands and a center dot
+  clockIcon: {
+    width: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clockHandHour: {
+    position: 'absolute',
+    width: 2,
+    height: 6,
+    borderRadius: 1,
+    top: 3,
+  },
+  clockHandMinute: {
+    position: 'absolute',
+    width: 7,
+    height: 2,
+    borderRadius: 1,
+    left: 9,
+  },
+  clockCenter: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
   },
 
   // Export Icon — düzgün hizalı yukarı ok: dikey gövde + üstünde simetrik ok başı.
@@ -672,8 +729,8 @@ const styles = StyleSheet.create({
   // Hakkında (About) card
   aboutCard: {
     paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 14,
+    paddingTop: 12,
+    paddingBottom: 12,
   },
   aboutHeader: {
     flexDirection: 'row',
@@ -692,14 +749,19 @@ const styles = StyleSheet.create({
   },
   aboutDivider: {
     height: 1,
-    marginTop: 12,
-    marginBottom: 14,
+    marginTop: 10,
+    marginBottom: 10,
     opacity: 0.5,
   },
   aboutLine: {
     fontSize: 13,
     lineHeight: 20,
     opacity: 0.85,
+  },
+  aboutLinePrimary: {
+    fontSize: 14,
+    fontWeight: '600',
+    opacity: 1,
   },
   aboutLineLabel: {
     opacity: 0.7,
@@ -708,8 +770,8 @@ const styles = StyleSheet.create({
   // Footer (imza)
   footer: {
     alignItems: 'center',
-    paddingTop: 4,
-    paddingBottom: 12,
+    paddingTop: 2,
+    paddingBottom: 6,
   },
   footerSignature: {
     fontSize: 12,

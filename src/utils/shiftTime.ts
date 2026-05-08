@@ -78,3 +78,53 @@ export function normalizeCustomTime(
   if (customTime === defaultTime) return undefined;
   return customTime;
 }
+
+/**
+ * Parse HH:MM into { hours, minutes }. Returns null on invalid input.
+ * Accepts "8:00", "08:00", "8.00" — anything that splits cleanly into
+ * two numeric parts within valid ranges.
+ */
+export function parseHM(value: string): { hours: number; minutes: number } | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  // Allow either ":" or "." as separator (TR keyboards often type ".")
+  const parts = trimmed.split(/[.:]/);
+  if (parts.length !== 2) return null;
+
+  const h = Number(parts[0]);
+  const m = Number(parts[1]);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+  if (!Number.isInteger(h) || !Number.isInteger(m)) return null;
+  if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+
+  return { hours: h, minutes: m };
+}
+
+/**
+ * Validate that a string is a valid HH:MM time (00:00–23:59).
+ */
+export function isValidHM(value: string): boolean {
+  return parseHM(value) !== null;
+}
+
+/**
+ * Format two numeric values into a normalized "HH:MM" string.
+ */
+export function formatHM(hours: number, minutes: number): string {
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+/**
+ * Decide whether a shift crosses midnight based on its start and end times.
+ * If the end is at or before the start (in minutes), it's overnight.
+ */
+export function isOvernightFromHM(startTime: string, endTime: string): boolean {
+  const start = parseHM(startTime);
+  const end = parseHM(endTime);
+  if (!start || !end) return false;
+  const startMin = start.hours * 60 + start.minutes;
+  const endMin = end.hours * 60 + end.minutes;
+  return endMin <= startMin;
+}
