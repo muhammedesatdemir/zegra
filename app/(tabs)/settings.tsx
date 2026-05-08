@@ -581,24 +581,30 @@ const styles = StyleSheet.create({
     width: '70%',
   },
 
-  // Export Icon
+  // Export Icon — düzgün hizalı yukarı ok: dikey gövde + üstünde simetrik ok başı.
+  // "exportArrow" üstte (ok başı), "exportBase" altta (dikey gövde) olarak konumlanır.
   exportIcon: {
-    width: 14,
-    height: 14,
+    width: 16,
+    height: 16,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   exportArrow: {
-    width: 8,
-    height: 8,
-    borderLeftWidth: 2,
-    borderTopWidth: 2,
-    transform: [{ rotate: '45deg' }, { translateY: 2 }],
+    position: 'absolute',
+    top: 1,
+    width: 10,
+    height: 10,
+    borderLeftWidth: 2.2,
+    borderTopWidth: 2.2,
+    borderTopLeftRadius: 1,
+    transform: [{ rotate: '45deg' }],
   },
   exportBase: {
-    width: 2,
-    height: 8,
     position: 'absolute',
     bottom: 0,
+    width: 2.2,
+    height: 11,
+    borderRadius: 1,
   },
 
   // Trash Icon
