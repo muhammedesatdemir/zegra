@@ -20,6 +20,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useScheduleStore } from '../../src/stores';
 import { formatDateTR, parseISODate, isValidISODate } from '../../src/utils/date';
 import { normalizeCustomTime } from '../../src/utils/shiftTime';
+import { hmToMinutes, minutesToHM } from '../../src/utils/duration';
 import { useTheme } from '../../src/context';
 import type { PlannedDay } from '../../src/types';
 
@@ -46,6 +47,22 @@ export default function DayEditScreen() {
   const [note, setNote] = useState(existingDay?.note ?? '');
   const [customStartTime, setCustomStartTime] = useState(existingDay?.customStartTime ?? '');
   const [customEndTime, setCustomEndTime] = useState(existingDay?.customEndTime ?? '');
+
+  // Fazla mesai ve eksik saat — saat ve dakika ayrı tutulur. Yokluk = boş string.
+  const initialOvertime = minutesToHM(existingDay?.overtimeMinutes ?? 0);
+  const initialShortage = minutesToHM(existingDay?.shortageMinutes ?? 0);
+  const [overtimeHours, setOvertimeHours] = useState(
+    existingDay?.overtimeMinutes ? String(initialOvertime.h) : ''
+  );
+  const [overtimeMinutesStr, setOvertimeMinutesStr] = useState(
+    existingDay?.overtimeMinutes ? String(initialOvertime.m) : ''
+  );
+  const [shortageHours, setShortageHours] = useState(
+    existingDay?.shortageMinutes ? String(initialShortage.h) : ''
+  );
+  const [shortageMinutesStr, setShortageMinutesStr] = useState(
+    existingDay?.shortageMinutes ? String(initialShortage.m) : ''
+  );
 
   // Get selected shift type details
   const selectedShiftType = useMemo(() => {
@@ -112,6 +129,15 @@ export default function DayEditScreen() {
     const shiftUnchanged =
       !!existingDay && existingDay.shiftCode === selectedShiftCode;
 
+    // Fazla mesai ve eksik saat sadece çalışma vardiyalarında geçerli; izin
+    // gününde sıfırlanır. 0 dakika kaydedilmez (alan undefined kalır).
+    const overtimeTotal = selectedShiftType?.isWorking
+      ? hmToMinutes(Number(overtimeHours), Number(overtimeMinutesStr))
+      : 0;
+    const shortageTotal = selectedShiftType?.isWorking
+      ? hmToMinutes(Number(shortageHours), Number(shortageMinutesStr))
+      : 0;
+
     const newDay: PlannedDay = {
       date,
       shiftCode: selectedShiftCode,
@@ -124,6 +150,8 @@ export default function DayEditScreen() {
       ...(shiftUnchanged && existingDay && existingDay.cycleIndex !== undefined
         ? { cycleIndex: existingDay.cycleIndex }
         : {}),
+      ...(overtimeTotal > 0 ? { overtimeMinutes: overtimeTotal } : {}),
+      ...(shortageTotal > 0 ? { shortageMinutes: shortageTotal } : {}),
     };
 
     setPlannedDay(newDay);
@@ -140,6 +168,12 @@ export default function DayEditScreen() {
     // Reset custom times when changing shift
     setCustomStartTime('');
     setCustomEndTime('');
+    // Vardiya değişince fazla mesai / eksik saat de sıfırlanır;
+    // bağlam değiştiği için önceki değerler artık geçerli değil.
+    setOvertimeHours('');
+    setOvertimeMinutesStr('');
+    setShortageHours('');
+    setShortageMinutesStr('');
   };
 
   return (
@@ -275,6 +309,32 @@ export default function DayEditScreen() {
           </View>
         )}
 
+        {/* Fazla Mesai & Eksik Saat - Only for working shifts */}
+        {selectedShiftType?.isWorking && (
+          <>
+            <DurationCard
+              title="Fazla Mesai"
+              icon="⏫"
+              accentColor="#10B981"
+              hours={overtimeHours}
+              minutes={overtimeMinutesStr}
+              onHoursChange={setOvertimeHours}
+              onMinutesChange={setOvertimeMinutesStr}
+              colors={colors}
+            />
+            <DurationCard
+              title="Eksik Saat"
+              icon="⏬"
+              accentColor="#F59E0B"
+              hours={shortageHours}
+              minutes={shortageMinutesStr}
+              onHoursChange={setShortageHours}
+              onMinutesChange={setShortageMinutesStr}
+              colors={colors}
+            />
+          </>
+        )}
+
         {/* Protection Toggle */}
         <Pressable
           style={[styles.protectRow, { backgroundColor: colors.surface }]}
@@ -361,6 +421,112 @@ export default function DayEditScreen() {
         <View style={styles.bottomSpacer} />
       </ScrollView>
     </KeyboardAvoidingView>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// DurationCard — saat/dakika girişi için kart bileşeni
+// (Fazla Mesai ve Eksik Saat tarafından kullanılır)
+// ----------------------------------------------------------------------------
+
+interface DurationCardProps {
+  title: string;
+  icon: string;
+  accentColor: string;
+  hours: string;
+  minutes: string;
+  onHoursChange: (v: string) => void;
+  onMinutesChange: (v: string) => void;
+  colors: ReturnType<typeof useTheme>['colors'];
+}
+
+function DurationCard({
+  title,
+  icon,
+  accentColor,
+  hours,
+  minutes,
+  onHoursChange,
+  onMinutesChange,
+  colors,
+}: DurationCardProps) {
+  // Saat: rakam, en fazla 3 hane (sıkı sınır yok ama 999 saat kafi)
+  const handleHours = (v: string) => {
+    const cleaned = v.replace(/[^0-9]/g, '').slice(0, 3);
+    onHoursChange(cleaned);
+  };
+  // Dakika: rakam, 0-59 ile sınırla
+  const handleMinutes = (v: string) => {
+    const cleaned = v.replace(/[^0-9]/g, '').slice(0, 2);
+    if (cleaned === '') {
+      onMinutesChange('');
+      return;
+    }
+    const n = Number(cleaned);
+    onMinutesChange(String(Math.min(59, n)));
+  };
+
+  const hasValue = hours !== '' || minutes !== '';
+
+  return (
+    <View style={[styles.durationCard, { backgroundColor: colors.surface }]}>
+      <View style={styles.durationHeader}>
+        <View style={[styles.durationIconBox, { backgroundColor: accentColor + '20' }]}>
+          <Text style={styles.durationIcon}>{icon}</Text>
+        </View>
+        <Text style={[styles.durationTitle, { color: colors.text }]}>{title}</Text>
+      </View>
+      <View style={styles.durationInputs}>
+        <View style={styles.durationInputGroup}>
+          <Text style={[styles.durationLabel, { color: colors.textSecondary }]}>
+            Saat
+          </Text>
+          <TextInput
+            style={[
+              styles.durationInput,
+              { backgroundColor: colors.surfaceSecondary, color: colors.text },
+            ]}
+            value={hours}
+            onChangeText={handleHours}
+            placeholder="0"
+            placeholderTextColor={colors.textMuted}
+            keyboardType="number-pad"
+            maxLength={3}
+          />
+        </View>
+        <View style={styles.durationInputGroup}>
+          <Text style={[styles.durationLabel, { color: colors.textSecondary }]}>
+            Dakika
+          </Text>
+          <TextInput
+            style={[
+              styles.durationInput,
+              { backgroundColor: colors.surfaceSecondary, color: colors.text },
+            ]}
+            value={minutes}
+            onChangeText={handleMinutes}
+            placeholder="0"
+            placeholderTextColor={colors.textMuted}
+            keyboardType="number-pad"
+            maxLength={2}
+          />
+        </View>
+        {hasValue && (
+          <Pressable
+            style={styles.durationResetButton}
+            onPress={() => {
+              onHoursChange('');
+              onMinutesChange('');
+            }}
+            hitSlop={8}
+          >
+            <Text style={[styles.durationResetText, { color: colors.primary }]}>
+              Sıfırla
+            </Text>
+          </Pressable>
+        )}
+      </View>
+    </View>
   );
 }
 
@@ -730,6 +896,74 @@ const styles = StyleSheet.create({
       ios: { fontFamily: 'System' },
       android: { fontFamily: 'sans-serif' },
     }),
+  },
+
+  // Duration Card (Fazla Mesai / Eksik Saat)
+  durationCard: {
+    padding: 16,
+    borderRadius: 14,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  durationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+  },
+  durationIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  durationIcon: {
+    fontSize: 16,
+  },
+  durationTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    ...Platform.select({
+      ios: { fontFamily: 'System' },
+      android: { fontFamily: 'sans-serif-medium' },
+    }),
+  },
+  durationInputs: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 12,
+  },
+  durationInputGroup: {
+    flex: 1,
+  },
+  durationLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginBottom: 6,
+  },
+  durationInput: {
+    padding: 12,
+    borderRadius: 10,
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+    ...Platform.select({
+      ios: { fontFamily: 'System' },
+      android: { fontFamily: 'sans-serif-medium' },
+    }),
+  },
+  durationResetButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+  },
+  durationResetText: {
+    fontSize: 13,
+    fontWeight: '500',
   },
 
   // Bottom Spacer

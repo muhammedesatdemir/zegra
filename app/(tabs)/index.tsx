@@ -13,7 +13,7 @@
 
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useScheduleStore, selectTodayShift } from '../../src/stores';
 import { formatDateTR, getTodayISO, addDaysToDate, parseISODate } from '../../src/utils/date';
 import { useTheme } from '../../src/context';
@@ -24,6 +24,8 @@ import {
   UpcomingDays,
   QuickActions,
   SmartInsight,
+  MesaiOzetiButton,
+  SummarySheet,
 } from '../../src/components/home';
 
 export default function HomeScreen() {
@@ -31,6 +33,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const today = getTodayISO();
+  const [summaryVisible, setSummaryVisible] = useState(false);
 
   const todayShift = useScheduleStore(selectTodayShift);
   const plannedDays = useScheduleStore((state) => state.plannedDays);
@@ -192,8 +195,16 @@ export default function HomeScreen() {
       {/* Upcoming 7 Days Preview */}
       <UpcomingDays days={upcomingDays} />
 
-      {/* Quick Actions - 2 buttons */}
+      {/* Quick Actions - 2 buttons (Takvim + Plan Oluştur) */}
       <QuickActions actions={quickActions} />
+
+      {/* Mesai Özeti — 2+1 düzeninin üçüncü butonu */}
+      <MesaiOzetiButton onPress={() => setSummaryVisible(true)} />
+
+      <SummarySheet
+        visible={summaryVisible}
+        onClose={() => setSummaryVisible(false)}
+      />
     </View>
   );
 }
