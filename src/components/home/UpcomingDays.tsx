@@ -136,6 +136,10 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     gap: 10,
   },
+  // Shadows intentionally omitted on these 7 cards: each elevation creates a
+  // separate Android RenderNode, and 7 layers re-compositing on resume blocked
+  // the UI thread long enough to drop tap events. Border + scale on the today
+  // card carry the visual hierarchy instead.
   dayCard: {
     width: 62,
     height: 92,
@@ -144,21 +148,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 8,
     paddingHorizontal: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
   },
   dayCardToday: {
     width: 68,
     height: 98,
     borderWidth: 2.5,
     borderColor: '#3B82F6',
-    shadowColor: '#3B82F6',
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 5,
     transform: [{ scale: 1.02 }],
   },
   dayCardTomorrow: {

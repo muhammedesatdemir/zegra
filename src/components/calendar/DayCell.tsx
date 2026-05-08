@@ -87,7 +87,7 @@ export function DayCell({
   cellSize,
   onPress,
 }: DayCellProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
 
   // Empty cell (days from prev/next month) - same structure for layout consistency
   if (day === null) {
@@ -129,15 +129,32 @@ export function DayCell({
         {/* Note Indicator - Top Left */}
         {hasNote && (
           <View style={styles.noteIndicator}>
-            <View style={styles.noteDot} />
+            <View
+              style={[
+                styles.noteDot,
+                isDark
+                  ? { width: 7, height: 7, borderRadius: 3.5, borderWidth: 1, borderColor: '#0F172A' }
+                  : { width: 8, height: 8, borderRadius: 4 },
+              ]}
+            />
           </View>
         )}
 
         {/* Lock Indicator - Top Right */}
         {isLocked && (
           <View style={styles.lockIndicator}>
-            <View style={styles.lockBody} />
-            <View style={styles.lockShackle} />
+            <View
+              style={[
+                styles.lockBody,
+                { backgroundColor: '#334155' },
+              ]}
+            />
+            <View
+              style={[
+                styles.lockShackle,
+                { borderColor: '#334155' },
+              ]}
+            />
           </View>
         )}
 
@@ -235,10 +252,7 @@ const styles = StyleSheet.create({
     left: 4,
   },
   noteDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#F59E0B',
+    backgroundColor: '#8B5CF6',
   },
 
   // Lock Indicator - Top Right
@@ -255,7 +269,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: 8,
     height: 5,
-    backgroundColor: '#9CA3AF',
     borderRadius: 1.5,
   },
   lockShackle: {
@@ -265,7 +278,6 @@ const styles = StyleSheet.create({
     height: 4,
     borderWidth: 1.5,
     borderBottomWidth: 0,
-    borderColor: '#9CA3AF',
     borderTopLeftRadius: 2.5,
     borderTopRightRadius: 2.5,
   },

@@ -7,7 +7,7 @@
     "icon": "./icon.png",
     "userInterfaceStyle": "automatic",
     "scheme": "vardiyaplani",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.demrivo.vardiyaplani",
