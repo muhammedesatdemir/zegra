@@ -271,6 +271,14 @@ export function reviseRange(
         source: 'revised',
         templateId: null,
         note: existing?.note ?? null, // Preserve existing note
+        // Fazla mesai / eksik saat değerlerini koru — toplu değişiklikte
+        // kilitli (override edilmiş) günün sayısal verileri kaybolmasın.
+        ...(existing?.overtimeMinutes !== undefined
+          ? { overtimeMinutes: existing.overtimeMinutes }
+          : {}),
+        ...(existing?.shortageMinutes !== undefined
+          ? { shortageMinutes: existing.shortageMinutes }
+          : {}),
       });
     }
   } else if (mode === 'from_template') {
@@ -316,6 +324,14 @@ export function reviseRange(
         templateId: template.id,
         note: existing?.note ?? null,
         cycleIndex, // Save cycle position for continuity
+        // Fazla mesai / eksik saat değerlerini koru — toplu değişiklikte
+        // kilitli (override edilmiş) günün sayısal verileri kaybolmasın.
+        ...(existing?.overtimeMinutes !== undefined
+          ? { overtimeMinutes: existing.overtimeMinutes }
+          : {}),
+        ...(existing?.shortageMinutes !== undefined
+          ? { shortageMinutes: existing.shortageMinutes }
+          : {}),
       });
     }
   }

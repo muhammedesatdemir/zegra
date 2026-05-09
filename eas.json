@@ -34,7 +34,7 @@
     },
     "production": {
       "extends": "base",
-      "autoIncrement": true,
+      "autoIncrement": false,
       "android": {
         "buildType": "app-bundle"
       },

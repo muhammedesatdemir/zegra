@@ -2,7 +2,7 @@
   "expo": {
     "name": "Vardiya Planı",
     "slug": "vardiya-plani",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./icon.png",
     "userInterfaceStyle": "automatic",
@@ -19,7 +19,7 @@
     },
     "android": {
       "package": "com.demrivo.vardiyaplani",
-      "versionCode": 11,
+      "versionCode": 12,
       "adaptiveIcon": {
         "foregroundImage": "./icon.png",
         "backgroundColor": "#0B1026"

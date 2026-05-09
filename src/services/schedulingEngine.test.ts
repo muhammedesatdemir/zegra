@@ -603,6 +603,108 @@ describe('reviseRange', () => {
 
     expect(result[0]?.note).toBe('Important note');
   });
+
+  test('preserves overtimeMinutes/shortageMinutes when overriding locked day (single_shift)', () => {
+    const existingDays: Record<string, PlannedDay> = {
+      '2026-03-02': {
+        date: '2026-03-02',
+        shiftCode: '0715',
+        isLocked: true,
+        source: 'manual',
+        templateId: null,
+        note: 'Kilitli gün',
+        overtimeMinutes: 120,
+        shortageMinutes: 30,
+      },
+    };
+
+    const result = reviseRange(
+      {
+        startDate: '2026-03-01',
+        endDate: '2026-03-03',
+        mode: 'single_shift',
+        shiftCode: 'OFF1',
+        overrideLocked: true,
+        overrideManual: true,
+      },
+      existingDays,
+      [mockTemplate],
+      mockShiftTypes
+    );
+
+    const revised = result.find((d) => d.date === '2026-03-02');
+    expect(revised).toBeDefined();
+    expect(revised?.overtimeMinutes).toBe(120);
+    expect(revised?.shortageMinutes).toBe(30);
+    // Diğer veriler de koruma altında olmalı (mevcut note davranışına paralel)
+    expect(revised?.note).toBe('Kilitli gün');
+  });
+
+  test('preserves overtimeMinutes/shortageMinutes when overriding locked day (from_template)', () => {
+    const existingDays: Record<string, PlannedDay> = {
+      '2026-03-02': {
+        date: '2026-03-02',
+        shiftCode: '0715',
+        isLocked: true,
+        source: 'manual',
+        templateId: null,
+        note: null,
+        overtimeMinutes: 90,
+        shortageMinutes: 15,
+      },
+    };
+
+    const result = reviseRange(
+      {
+        startDate: '2026-03-01',
+        endDate: '2026-03-03',
+        mode: 'from_template',
+        templateId: mockTemplate.id,
+        phaseOffset: 0,
+        overrideLocked: true,
+        overrideManual: true,
+      },
+      existingDays,
+      [mockTemplate],
+      mockShiftTypes
+    );
+
+    const revised = result.find((d) => d.date === '2026-03-02');
+    expect(revised).toBeDefined();
+    expect(revised?.overtimeMinutes).toBe(90);
+    expect(revised?.shortageMinutes).toBe(15);
+  });
+
+  test('does not introduce overtimeMinutes/shortageMinutes when existing day has none', () => {
+    const existingDays: Record<string, PlannedDay> = {
+      '2026-03-01': {
+        date: '2026-03-01',
+        shiftCode: '0715',
+        isLocked: false,
+        source: 'generated',
+        templateId: null,
+        note: null,
+        // overtimeMinutes ve shortageMinutes yok
+      },
+    };
+
+    const result = reviseRange(
+      {
+        startDate: '2026-03-01',
+        endDate: '2026-03-01',
+        mode: 'single_shift',
+        shiftCode: 'OFF1',
+        overrideLocked: false,
+        overrideManual: false,
+      },
+      existingDays,
+      [mockTemplate],
+      mockShiftTypes
+    );
+
+    expect(result[0]?.overtimeMinutes).toBeUndefined();
+    expect(result[0]?.shortageMinutes).toBeUndefined();
+  });
 });
 
 // ============================================
