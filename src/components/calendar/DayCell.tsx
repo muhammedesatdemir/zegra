@@ -20,24 +20,27 @@ interface DayCellProps {
   shiftType: ShiftType | null;
   isToday: boolean;
   isSelected?: boolean;
+  isHoliday?: boolean;
   cellSize: number;
   onPress: () => void;
 }
 
-// FINAL COLOR SYSTEM - using shift type's own color as base
-// Background colors are soft versions, text colors provide contrast
+// FINAL COLOR SYSTEM — calendar uses a soft variant of each shift's identity
+// color. Sabah is intentionally pushed into a stronger emerald tone so it
+// reads as clearly "green" next to Off's slate, since users were confusing
+// the two when sabah used the lighter mint shade.
 const SHIFT_BG_COLORS = {
-  S: '#DCFCE7',      // Soft green for Sabah
+  S: '#BBF7D0',      // emerald-200 — stronger green for Sabah
   Ö: '#FED7AA',      // Soft orange for Öğle - TURKISH Ö CHARACTER
   G: '#DBEAFE',      // Soft blue for Gece
-  Off: '#F1F5F9',    // Slate gray for Off
+  Off: '#E2E8F0',    // slate-200 — different hue family, no green tint
 } as const;
 
 const SHIFT_TEXT_COLORS = {
-  S: '#166534',      // Dark green
+  S: '#14532D',      // emerald-900 — strong contrast over BBF7D0
   Ö: '#C2410C',      // Dark orange - TURKISH Ö CHARACTER
   G: '#1D4ED8',      // Dark blue
-  Off: '#475569',    // Slate text
+  Off: '#475569',    // slate-600
 } as const;
 
 type ShiftColorKey = keyof typeof SHIFT_BG_COLORS;
@@ -84,6 +87,7 @@ export function DayCell({
   shiftType,
   isToday,
   isSelected,
+  isHoliday,
   cellSize,
   onPress,
 }: DayCellProps) {
@@ -169,6 +173,17 @@ export function DayCell({
         >
           {day}
         </Text>
+
+        {/* Holiday underline — sits just below the day number, intentionally
+            subtle so it never competes with shift colors or the today border. */}
+        {isHoliday && (
+          <View
+            style={[
+              styles.holidayUnderline,
+              { backgroundColor: isDark ? '#F87171' : '#DC2626' },
+            ]}
+          />
+        )}
 
         {/* Shift Label */}
         {hasShift ? (
@@ -298,6 +313,14 @@ const styles = StyleSheet.create({
   },
   emptyDayNumber: {
     opacity: 0.5,
+  },
+  holidayUnderline: {
+    width: 14,
+    height: 2,
+    borderRadius: 1,
+    marginTop: -2,
+    marginBottom: 3,
+    opacity: 0.9,
   },
 
   // Shift Label - compact to prevent overflow

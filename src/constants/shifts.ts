@@ -11,13 +11,19 @@ import type { ShiftType, ProgramTemplate } from '../types';
 // DEFAULT SHIFT TYPES
 // ============================================
 
+// Legacy color values — used by the migration in fileRepository to upgrade
+// users who installed before the palette was tightened (sabah was too light
+// against off/izin gray).
+export const LEGACY_SABAH_COLOR = '#22C55E';
+export const LEGACY_OFF_COLOR = '#9CA3AF';
+
 export const DEFAULT_SHIFT_TYPES: ShiftType[] = [
   {
     id: 'shift_0715',
     code: '0715',
     name: 'Sabah',
     shortName: 'S',
-    color: '#22C55E', // green
+    color: '#16A34A', // emerald-600 — deeper green so it doesn't blend with off/izin
     startTime: '07:00',
     endTime: '15:00',
     isWorking: true,
@@ -53,7 +59,7 @@ export const DEFAULT_SHIFT_TYPES: ShiftType[] = [
     code: 'OFF',
     name: 'Off',
     shortName: 'Off',
-    color: '#9CA3AF', // gray
+    color: '#94A3B8', // slate-400 — clearly different family from sabah's green
     startTime: null,
     endTime: null,
     isWorking: false,
@@ -66,7 +72,7 @@ export const DEFAULT_SHIFT_TYPES: ShiftType[] = [
     code: 'OFF1',
     name: 'Off',
     shortName: 'Off',
-    color: '#9CA3AF', // gray - same as OFF for visual consistency
+    color: '#94A3B8', // slate-400 — same as OFF for visual consistency
     startTime: null,
     endTime: null,
     isWorking: false,
@@ -78,7 +84,7 @@ export const DEFAULT_SHIFT_TYPES: ShiftType[] = [
     code: 'OFF2',
     name: 'Off',
     shortName: 'Off',
-    color: '#9CA3AF', // gray - same as OFF for visual consistency
+    color: '#94A3B8', // slate-400 — same as OFF for visual consistency
     startTime: null,
     endTime: null,
     isWorking: false,

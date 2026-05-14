@@ -39,6 +39,11 @@ interface ScheduleState {
   selectedDate: string;
   viewYear: number;
   viewMonth: number;
+  // Mesai Özeti (ve ileride Aylık Notlar) için ayrı bir "seçili ay" tutuyoruz.
+  // Takvim ekranındaki viewYear/viewMonth'tan bağımsız, çünkü kullanıcı takvimde
+  // farklı bir aya bakarken özeti başka bir ay için açmak isteyebilir.
+  summaryYear: number;
+  summaryMonth: number;
   isLoading: boolean;
 
   // Actions - Data Loading
@@ -67,7 +72,7 @@ interface ScheduleState {
 
   // Actions - Templates
   setActiveTemplate: (templateId: string) => void;
-  addTemplate: (template: Omit<ProgramTemplate, 'id'>) => void;
+  addTemplate: (template: Omit<ProgramTemplate, 'id'>) => string;
   updateTemplate: (templateId: string, updates: Partial<ProgramTemplate>) => void;
   saveTemplate: (template: ProgramTemplate) => void;
   deleteTemplate: (templateId: string) => void;
@@ -85,6 +90,12 @@ interface ScheduleState {
   goToPreviousMonth: () => void;
   goToNextMonth: () => void;
   goToToday: () => void;
+
+  // Actions - Summary month picker (also reused by future "Aylık Notlar")
+  setSummaryMonth: (year: number, month: number) => void;
+  goToPreviousSummaryMonth: () => void;
+  goToNextSummaryMonth: () => void;
+  resetSummaryToCurrentMonth: () => void;
 
   // Actions - Data Management
   exportData: () => string;
@@ -118,6 +129,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
   selectedDate: getTodayISO(),
   viewYear: getCurrentYearMonth().year,
   viewMonth: getCurrentYearMonth().month,
+  summaryYear: getCurrentYearMonth().year,
+  summaryMonth: getCurrentYearMonth().month,
   isLoading: false,
 
   // ============================================
@@ -334,6 +347,7 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       id: `template_${Date.now()}`,
     };
     get().saveTemplate(template);
+    return template.id;
   },
 
   updateTemplate: (templateId: string, updates: Partial<ProgramTemplate>) => {
@@ -466,6 +480,43 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       viewYear: year,
       viewMonth: month,
     });
+  },
+
+  // ============================================
+  // SUMMARY MONTH (mesai özeti + ileride aylık notlar)
+  // ============================================
+
+  setSummaryMonth: (year: number, month: number) => {
+    set({ summaryYear: year, summaryMonth: month });
+  },
+
+  goToPreviousSummaryMonth: () => {
+    set((state) => {
+      let m = state.summaryMonth - 1;
+      let y = state.summaryYear;
+      if (m < 1) {
+        m = 12;
+        y -= 1;
+      }
+      return { summaryMonth: m, summaryYear: y };
+    });
+  },
+
+  goToNextSummaryMonth: () => {
+    set((state) => {
+      let m = state.summaryMonth + 1;
+      let y = state.summaryYear;
+      if (m > 12) {
+        m = 1;
+        y += 1;
+      }
+      return { summaryMonth: m, summaryYear: y };
+    });
+  },
+
+  resetSummaryToCurrentMonth: () => {
+    const { year, month } = getCurrentYearMonth();
+    set({ summaryYear: year, summaryMonth: month });
   },
 
   // ============================================

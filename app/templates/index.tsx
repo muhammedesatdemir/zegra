@@ -16,7 +16,7 @@ import type { ShiftType } from '../../src/types';
 
 // Friendly display info for a template (title, subtitle, pattern)
 function getTemplateDisplayInfo(
-  template: { name: string; steps: string[]; cycleLength: number },
+  template: { name: string; steps: string[]; cycleLength: number; isDefault?: boolean },
   shiftTypes: ShiftType[]
 ) {
   const { name, steps, cycleLength } = template;
@@ -60,9 +60,14 @@ function getTemplateDisplayInfo(
     .map((g) => `${g.count} ${g.name.toLowerCase()}`)
     .join(' → ');
 
-  let friendlyName = name;
-  if (name.startsWith('BYG-') || name.match(/^[A-Z]+-[A-Z0-9]+$/)) {
+  const trimmed = name.trim();
+  let friendlyName = trimmed;
+  if (trimmed.startsWith('BYG-') || /^[A-Z]+-[A-Z0-9]+$/.test(trimmed)) {
     friendlyName = `Standart ${cycleLength} Gün Döngü`;
+  } else if (!template.isDefault && trimmed.length < 2) {
+    // Custom templates may end up with a 1-character name; show a readable
+    // fallback rather than letting the card collapse to a single letter.
+    friendlyName = trimmed.length === 0 ? 'Özel Düzen' : `${trimmed} (Özel Düzen)`;
   }
 
   return {

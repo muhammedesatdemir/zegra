@@ -15,7 +15,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
-  KeyboardAvoidingView,
+  Keyboard,
   Modal,
   Platform,
   Pressable,
@@ -223,6 +223,30 @@ function ShiftTimeEditor({ shift, onClose, onSave }: ShiftTimeEditorProps) {
   const [endM, setEndM] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  // The iOS KeyboardAvoidingView in this modal historically did not lift
+  // the bottom sheet far enough on Android (where the modal sits over the
+  // host activity and adjustResize doesn't reach it). Track the keyboard
+  // height directly and push the sheet up by that amount — works the same
+  // on both platforms inside a Modal.
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent =
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e.endCoordinates?.height ?? 0);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const sheetTranslate = useRef(new Animated.Value(40)).current;
   const sheetOpacity = useRef(new Animated.Value(0)).current;
@@ -320,6 +344,14 @@ function ShiftTimeEditor({ shift, onClose, onSave }: ShiftTimeEditorProps) {
     setError(null);
   };
 
+  // When the keyboard is up, ignore the safe-area bottom inset (it's already
+  // hidden behind the keyboard) and pad the sheet by the keyboard height so
+  // the inputs and action buttons stay visible above it.
+  const sheetBottomPadding =
+    keyboardHeight > 0
+      ? keyboardHeight + 16
+      : Math.max(insets.bottom, 20) + 16;
+
   return (
     <Modal
       visible={visible}
@@ -328,10 +360,7 @@ function ShiftTimeEditor({ shift, onClose, onSave }: ShiftTimeEditorProps) {
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <KeyboardAvoidingView
-        style={editorStyles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <View style={editorStyles.flex}>
         <Animated.View
           style={[editorStyles.overlay, { opacity: overlayOpacity }]}
         >
@@ -347,7 +376,7 @@ function ShiftTimeEditor({ shift, onClose, onSave }: ShiftTimeEditorProps) {
               editorStyles.sheet,
               {
                 backgroundColor: colors.surface,
-                paddingBottom: Math.max(insets.bottom, 20) + 16,
+                paddingBottom: sheetBottomPadding,
                 opacity: sheetOpacity,
                 transform: [{ translateY: sheetTranslate }],
               },
@@ -519,7 +548,7 @@ function ShiftTimeEditor({ shift, onClose, onSave }: ShiftTimeEditorProps) {
             </View>
           </Animated.View>
         </Animated.View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }

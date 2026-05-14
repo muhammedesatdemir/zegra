@@ -5,7 +5,7 @@
  * Hızlı, net, güçlü ve sade tasarım.
  */
 
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -40,7 +40,10 @@ interface SuccessModalState {
 }
 
 // Şablon için kullanıcı dostu isim ve açıklama oluştur
-function getTemplateDisplayInfo(template: { name: string; steps: string[]; cycleLength: number }, shiftTypes: any[]) {
+function getTemplateDisplayInfo(
+  template: { name: string; steps: string[]; cycleLength: number; isDefault?: boolean },
+  shiftTypes: any[]
+) {
   const { name, steps, cycleLength } = template;
 
   // İzin günü sayısını hesapla
@@ -88,9 +91,12 @@ function getTemplateDisplayInfo(template: { name: string; steps: string[]; cycle
     .join(' → ');
 
   // Kullanıcı dostu başlık
-  let friendlyName = name;
-  if (name.startsWith('BYG-') || name.match(/^[A-Z]+-[A-Z0-9]+$/)) {
+  const trimmed = name.trim();
+  let friendlyName = trimmed;
+  if (trimmed.startsWith('BYG-') || /^[A-Z]+-[A-Z0-9]+$/.test(trimmed)) {
     friendlyName = `Standart ${cycleLength} Gün Döngü`;
+  } else if (!template.isDefault && trimmed.length < 2) {
+    friendlyName = trimmed.length === 0 ? 'Özel Düzen' : `${trimmed} (Özel Düzen)`;
   }
 
   return {
@@ -290,6 +296,29 @@ export default function GenerateScreen() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
     activeTemplate?.id ?? null
   );
+
+  // When the user creates a custom template from this screen (via the
+  // "Kendi Düzenini Oluştur" CTA), navigation pushes templates/new and pops
+  // back without unmounting Generate. The active template in the store is
+  // now the new custom one, but our local selection still points at the
+  // previous default. Sync to the active template whenever it changes from
+  // under us, or when the previously selected template no longer exists.
+  useEffect(() => {
+    if (!activeTemplate?.id) return;
+
+    const selectionIsStale =
+      !selectedTemplateId ||
+      !templates.some((t) => t.id === selectedTemplateId);
+
+    if (selectionIsStale || selectedTemplateId !== activeTemplate.id) {
+      setSelectedTemplateId(activeTemplate.id);
+    }
+    // We intentionally don't depend on selectedTemplateId here: that would
+    // immediately re-sync after the user picks a different card on this
+    // screen. We only want to follow store-driven changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTemplate?.id, templates]);
+
   const [startPoint, setStartPoint] = useState<StartPoint>('month_start');
   const [rangePreset, setRangePreset] = useState<RangePreset>('this_month');
   const [preserveCustomDays, setPreserveCustomDays] = useState(true);

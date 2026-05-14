@@ -8,7 +8,7 @@
  * edilmez, net mesai/ücret hesabı yapılmaz.
  */
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   Modal,
   View,
@@ -23,9 +23,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useScheduleStore } from '../../stores';
 import { useTheme } from '../../context';
-import { formatMonthYearTR } from '../../utils/date';
 import { formatDurationTR, sumMonthDurations } from '../../utils/duration';
 import { PressableScale } from '../ui';
+import { MonthPicker, formatSummaryMonthLabel } from './MonthPicker';
 
 interface SummarySheetProps {
   visible: boolean;
@@ -37,20 +37,32 @@ export function SummarySheet({ visible, onClose }: SummarySheetProps) {
   const insets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
   const plannedDays = useScheduleStore((state) => state.plannedDays);
+  const summaryYear = useScheduleStore((state) => state.summaryYear);
+  const summaryMonth = useScheduleStore((state) => state.summaryMonth);
+  const resetSummaryToCurrentMonth = useScheduleStore(
+    (state) => state.resetSummaryToCurrentMonth,
+  );
 
-  // Mevcut ayın özeti — modal her açıldığında yeniden hesaplanır.
-  // Ay bilgisini render anında alıyoruz ki ay sınırı geçildiyse güncel olsun.
-  const { monthLabel, overtime, shortage } = useMemo(() => {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth() + 1;
-    const totals = sumMonthDurations(plannedDays, y, m);
-    return {
-      monthLabel: formatMonthYearTR(now),
-      overtime: totals.overtime,
-      shortage: totals.shortage,
-    };
-  }, [plannedDays, visible]);
+  // Sheet her açıldığında "bugünün ayı"na sıfırlıyoruz. Session içinde
+  // kullanıcı oklarla geziniyor olsa bile, modal kapanıp tekrar açılınca
+  // varsayılan deneyim (içinde bulunulan ay) korunsun.
+  useEffect(() => {
+    if (visible) {
+      resetSummaryToCurrentMonth();
+    }
+  }, [visible, resetSummaryToCurrentMonth]);
+
+  // Seçili ay için fazla mesai ve eksik saat toplamları.
+  // sumMonthDurations zaten (year, month) parametresi alıyor — eklediğimiz
+  // tek şey state-driven year/month.
+  const { overtime, shortage } = useMemo(() => {
+    return sumMonthDurations(plannedDays, summaryYear, summaryMonth);
+  }, [plannedDays, summaryYear, summaryMonth]);
+
+  const monthLabel = formatSummaryMonthLabel(summaryYear, summaryMonth);
+
+  // Paylaşım mesajında da seçili ayı kullanıyoruz (sadece o ayın özeti
+  // paylaşılır — kullanıcının o an gördüğü değerle birebir aynı).
 
   // Sistem navigation bar / home indicator için minimum güvenli boşluk.
   // Android üç-tuşlu çubukta insets.bottom 0 dönebildiği için ekstra
@@ -66,11 +78,8 @@ export function SummarySheet({ visible, onClose }: SummarySheetProps) {
   const sheetMaxHeight = windowHeight - insets.top - 64;
 
   const handleShare = async () => {
-    // Ay başlığında ilk harfi büyütüyoruz: "mayıs 2026" → "Mayıs 2026"
-    // (date-fns 'tr' locale küçük harfle döndürür)
-    const titleCased = monthLabel.charAt(0).toLocaleUpperCase('tr-TR') + monthLabel.slice(1);
     const message =
-      `${titleCased} Mesai Özeti:\n` +
+      `${monthLabel} Mesai Özeti:\n` +
       `Toplam fazla mesai: ${formatDurationTR(overtime)}\n` +
       `Toplam eksik saat: ${formatDurationTR(shortage)}`;
 
@@ -82,9 +91,6 @@ export function SummarySheet({ visible, onClose }: SummarySheetProps) {
       }
     }
   };
-
-  const titleCased =
-    monthLabel.charAt(0).toLocaleUpperCase('tr-TR') + monthLabel.slice(1);
 
   return (
     <Modal
@@ -113,8 +119,13 @@ export function SummarySheet({ visible, onClose }: SummarySheetProps) {
             bounces={false}
           >
             <Text style={[styles.title, { color: colors.text }]}>
-              {titleCased} Mesai Özeti
+              Mesai Özeti
             </Text>
+
+            {/* Ortak MonthPicker — Aylık Notlar sheet'i de aynısını kullanır.
+                Store'daki summaryYear/summaryMonth state'ini paylaştığımız için
+                bir görünümde ay değiştirmek diğerinde de senkron kalır. */}
+            <MonthPicker />
 
             <View style={styles.row}>
               <View style={[styles.iconBox, { backgroundColor: '#10B98120' }]}>
@@ -206,7 +217,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '700',
-    marginBottom: 20,
+    marginBottom: 12,
     textAlign: 'center',
     ...Platform.select({
       ios: { fontFamily: 'System' },

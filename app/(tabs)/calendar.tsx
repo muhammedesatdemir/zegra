@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { useScheduleStore } from '../../src/stores';
 import { getDayCount, getTodayISO } from '../../src/utils/date';
+import { isHoliday } from '../../src/constants/holidays';
 import { useTheme } from '../../src/context';
 import {
   CalendarHeader,
@@ -44,6 +45,7 @@ export default function CalendarScreen() {
       plannedDay: typeof plannedDays[string] | null;
       shiftType: typeof shiftTypes[number] | null;
       isToday: boolean;
+      isHoliday?: boolean;
     }> = [];
 
     for (let i = 0; i < adjustedFirstDay; i++) {
@@ -63,6 +65,7 @@ export default function CalendarScreen() {
         plannedDay,
         shiftType,
         isToday: dateStr === today,
+        isHoliday: isHoliday(dateStr),
       });
     }
 

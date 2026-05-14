@@ -65,6 +65,11 @@ function NavigationContent() {
           headerTitleStyle: {
             fontWeight: 'bold',
           },
+          headerTitleAlign: 'center',
+          // iOS: hide the previous route's title next to the back chevron
+          // (otherwise '(tabs)' from the parent group leaks into the UI).
+          headerBackTitle: '',
+          headerBackButtonDisplayMode: 'minimal',
           contentStyle: {
             backgroundColor: colors.background,
           },

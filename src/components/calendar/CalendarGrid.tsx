@@ -17,6 +17,7 @@ interface CalendarDayData {
   plannedDay: PlannedDay | null;
   shiftType: ShiftType | null;
   isToday: boolean;
+  isHoliday?: boolean;
 }
 
 interface CalendarGridProps {
@@ -77,6 +78,7 @@ export function CalendarGrid({ days, selectedDate, onDayPress }: CalendarGridPro
               shiftType={item.shiftType}
               isToday={item.isToday}
               isSelected={item.dateStr === selectedDate}
+              isHoliday={item.isHoliday}
               cellSize={cellSize}
               onPress={() => item.dateStr && onDayPress(item.dateStr)}
             />

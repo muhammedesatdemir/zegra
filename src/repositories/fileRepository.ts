@@ -25,6 +25,8 @@ import {
   DEFAULT_SHIFT_TYPES,
   DEFAULT_TEMPLATES,
   DEFAULT_SETTINGS,
+  LEGACY_SABAH_COLOR,
+  LEGACY_OFF_COLOR,
 } from '../constants/shifts';
 import { getDaysInRange, getDaysInMonthRange } from '../utils/date';
 
@@ -82,6 +84,7 @@ export class FileRepository implements IScheduleRepository {
       if (data && typeof data === 'object') {
         if (Array.isArray(data.shiftTypes) && data.shiftTypes.length > 0) {
           this.shiftTypes = data.shiftTypes;
+          this.migrateShiftColors();
         }
         if (Array.isArray(data.templates) && data.templates.length > 0) {
           this.templates = data.templates;
@@ -97,6 +100,40 @@ export class FileRepository implements IScheduleRepository {
       if (__DEV__) {
         console.error('[Persist] Load failed, using defaults:', error);
       }
+    }
+  }
+
+  // ============================================
+  // MIGRATIONS
+  // ============================================
+
+  /**
+   * Bring older persisted shift palettes in line with the current defaults.
+   *
+   * Sabah/Off rengi başlangıçta birbirine çok yakın seçilmişti (#22C55E vs.
+   * #9CA3AF). Kullanıcılar bu iki rengi karıştırdığı için palet
+   * koyulaştırıldı ve farklı renk ailesine taşındı. Bu fonksiyon yalnızca
+   * kullanıcının dokunmadığı (varsayılan kalan) rengi günceller — özelleştirilen
+   * renkler korunur.
+   */
+  private migrateShiftColors(): void {
+    let mutated = false;
+    this.shiftTypes = this.shiftTypes.map((st) => {
+      if (st.code === '0715' && st.color?.toUpperCase() === LEGACY_SABAH_COLOR) {
+        mutated = true;
+        return { ...st, color: '#16A34A' };
+      }
+      if (
+        (st.code === 'OFF' || st.code === 'OFF1' || st.code === 'OFF2') &&
+        st.color?.toUpperCase() === LEGACY_OFF_COLOR
+      ) {
+        mutated = true;
+        return { ...st, color: '#94A3B8' };
+      }
+      return st;
+    });
+    if (mutated) {
+      this.save();
     }
   }
 

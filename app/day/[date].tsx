@@ -5,7 +5,7 @@
  * Premium, user-friendly design with clear Turkish language.
  */
 
-import { useState, useMemo } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,9 +16,11 @@ import {
   Platform,
   KeyboardAvoidingView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useScheduleStore } from '../../src/stores';
 import { formatDateTR, parseISODate, isValidISODate } from '../../src/utils/date';
+import { getHolidayName } from '../../src/constants/holidays';
 import { normalizeCustomTime } from '../../src/utils/shiftTime';
 import { hmToMinutes, minutesToHM } from '../../src/utils/duration';
 import { useTheme } from '../../src/context';
@@ -31,6 +33,8 @@ export default function DayEditScreen() {
   const date = rawDate && isValidISODate(rawDate) ? rawDate : null;
   const router = useRouter();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
 
   const plannedDays = useScheduleStore((state) => state.plannedDays);
   const shiftTypes = useScheduleStore((state) => state.shiftTypes);
@@ -78,6 +82,7 @@ export default function DayEditScreen() {
   const dateObj = date ? parseISODate(date) : new Date();
   const formattedDate = date ? formatDateTR(dateObj) : '';
   const dayName = new Intl.DateTimeFormat('tr-TR', { weekday: 'long' }).format(dateObj);
+  const holidayName = date ? getHolidayName(date) : null;
 
   // Get existing shift type for summary
   const existingShiftType = existingDay
@@ -176,15 +181,24 @@ export default function DayEditScreen() {
     setShortageMinutesStr('');
   };
 
+  // Modal presentation pushes content below a translucent header on iOS, so
+  // we need a vertical offset equal to the safe-area top + header height to
+  // keep the focused input fully visible above the keyboard.
+  const keyboardOffset = Platform.OS === 'ios' ? insets.top + 44 : 0;
+
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={keyboardOffset}
     >
       <ScrollView
+        ref={scrollRef}
         style={[styles.container, { backgroundColor: colors.background }]}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
       >
         {/* Day Summary Card */}
         <View style={[styles.summaryCard, { backgroundColor: colors.surface }]}>
@@ -195,6 +209,11 @@ export default function DayEditScreen() {
             <Text style={[styles.summaryDay, { color: colors.textSecondary }]}>
               {dayName}
             </Text>
+            {holidayName && (
+              <Text style={styles.summaryHoliday}>
+                🇹🇷 Resmi Tatil — {holidayName}
+              </Text>
+            )}
           </View>
           {existingShiftType && (
             <View style={[styles.summaryBadge, { backgroundColor: existingShiftType.color }]}>
@@ -373,6 +392,13 @@ export default function DayEditScreen() {
             multiline
             numberOfLines={3}
             textAlignVertical="top"
+            onFocus={() => {
+              // Note input sits near the bottom of the form. Scroll the
+              // form so the field stays visible above the keyboard.
+              setTimeout(() => {
+                scrollRef.current?.scrollToEnd({ animated: true });
+              }, 200);
+            }}
           />
           <Text style={[styles.noteHint, { color: colors.textMuted }]}>
             Örn: İzin değişti, nöbet kaydırıldı...
@@ -481,35 +507,51 @@ function DurationCard({
           <Text style={[styles.durationLabel, { color: colors.textSecondary }]}>
             Saat
           </Text>
-          <TextInput
+          <View
             style={[
-              styles.durationInput,
-              { backgroundColor: colors.surfaceSecondary, color: colors.text },
+              styles.durationInputBox,
+              { backgroundColor: colors.surfaceSecondary },
             ]}
-            value={hours}
-            onChangeText={handleHours}
-            placeholder="0"
-            placeholderTextColor={colors.textMuted}
-            keyboardType="number-pad"
-            maxLength={3}
-          />
+          >
+            <TextInput
+              style={[styles.durationInput, { color: colors.text }]}
+              value={hours}
+              onChangeText={handleHours}
+              placeholder="0"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="number-pad"
+              maxLength={3}
+              textAlign="center"
+              textAlignVertical="center"
+              selectTextOnFocus
+              underlineColorAndroid="transparent"
+            />
+          </View>
         </View>
         <View style={styles.durationInputGroup}>
           <Text style={[styles.durationLabel, { color: colors.textSecondary }]}>
             Dakika
           </Text>
-          <TextInput
+          <View
             style={[
-              styles.durationInput,
-              { backgroundColor: colors.surfaceSecondary, color: colors.text },
+              styles.durationInputBox,
+              { backgroundColor: colors.surfaceSecondary },
             ]}
-            value={minutes}
-            onChangeText={handleMinutes}
-            placeholder="0"
-            placeholderTextColor={colors.textMuted}
-            keyboardType="number-pad"
-            maxLength={2}
-          />
+          >
+            <TextInput
+              style={[styles.durationInput, { color: colors.text }]}
+              value={minutes}
+              onChangeText={handleMinutes}
+              placeholder="0"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="number-pad"
+              maxLength={2}
+              textAlign="center"
+              textAlignVertical="center"
+              selectTextOnFocus
+              underlineColorAndroid="transparent"
+            />
+          </View>
         </View>
         {hasValue && (
           <Pressable
@@ -580,6 +622,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     textTransform: 'capitalize',
+  },
+  summaryHoliday: {
+    marginTop: 4,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#DC2626',
+    ...Platform.select({
+      ios: { fontFamily: 'System' },
+      android: { fontFamily: 'sans-serif-medium' },
+    }),
   },
   summaryBadge: {
     paddingHorizontal: 12,
@@ -946,15 +998,26 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 6,
   },
-  durationInput: {
-    padding: 12,
+  // Outer pressable-sized box owns padding + background.
+  // The inner TextInput only renders text/cursor — that keeps the cursor
+  // visually centered on Android, where padding on the TextInput itself
+  // can shift the caret toward the right edge.
+  durationInputBox: {
     borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: 'stretch',
+    justifyContent: 'center',
+  },
+  durationInput: {
     fontSize: 16,
     fontWeight: '600',
+    padding: 0,
+    margin: 0,
     textAlign: 'center',
     ...Platform.select({
       ios: { fontFamily: 'System' },
-      android: { fontFamily: 'sans-serif-medium' },
+      android: { fontFamily: 'sans-serif-medium', includeFontPadding: false },
     }),
   },
   durationResetButton: {

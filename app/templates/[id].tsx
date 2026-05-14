@@ -242,6 +242,7 @@ export default function TemplateDetailScreen() {
   const addTemplate = useScheduleStore((state) => state.addTemplate);
   const updateTemplate = useScheduleStore((state) => state.updateTemplate);
   const deleteTemplate = useScheduleStore((state) => state.deleteTemplate);
+  const setActiveTemplate = useScheduleStore((state) => state.setActiveTemplate);
 
   const existingTemplate = templates.find((t) => t.id === id);
 
@@ -320,13 +321,17 @@ export default function TemplateDetailScreen() {
     }
 
     if (isNew) {
-      addTemplate({
+      const newId = addTemplate({
         name: name.trim(),
         cycleLength: steps.length,
         steps,
         isActive: false,
         isDefault: false,
       });
+      // Creating a custom template implies the user wants to use it — promote
+      // it to active so the Templates and Generate screens reflect the choice
+      // instead of leaving the system default selected.
+      setActiveTemplate(newId);
     } else if (existingTemplate) {
       updateTemplate(existingTemplate.id, {
         name: name.trim(),
