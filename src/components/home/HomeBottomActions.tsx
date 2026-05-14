@@ -34,8 +34,8 @@ export function HomeBottomActions({
         pressedScale={0.97}
         rippleColor="rgba(59,130,246,0.10)"
       >
-        <View style={[styles.iconContainer, { backgroundColor: colors.primaryLight }]}>
-          <Text style={styles.icon}>⏱</Text>
+        <View style={[styles.iconContainer, { backgroundColor: colors.iconChipBg }]}>
+          <Text style={[styles.icon, { color: colors.iconChipFg }]}>⏱</Text>
         </View>
         <View style={styles.textContainer}>
           <Text style={[styles.label, { color: colors.text }]}>Mesai Özeti</Text>
@@ -52,8 +52,8 @@ export function HomeBottomActions({
         pressedScale={0.97}
         rippleColor="rgba(59,130,246,0.10)"
       >
-        <View style={[styles.iconContainer, { backgroundColor: colors.primaryLight }]}>
-          <Text style={styles.icon}>📝</Text>
+        <View style={[styles.iconContainer, { backgroundColor: colors.iconChipBg }]}>
+          <Text style={[styles.icon, { color: colors.iconChipFg }]}>📝</Text>
         </View>
         <View style={styles.textContainer}>
           <Text style={[styles.label, { color: colors.text }]}>Aylık Notlar</Text>

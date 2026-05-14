@@ -53,8 +53,8 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => <TabIcon name="home" focused={focused} />,
           headerTitle: () => (
             <View style={styles.brandHeader}>
-              <Text style={styles.brandName}>Zekra</Text>
-              <Text style={styles.brandProduct}>Vardiya Planı</Text>
+              <Text style={styles.brandName}>Vardiya Planı</Text>
+              <Text style={styles.brandProduct}>Demrivo</Text>
             </View>
           ),
           headerTitleAlign: 'center',

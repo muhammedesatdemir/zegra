@@ -18,6 +18,12 @@ export interface ThemeColors {
   borderLight: string;
   primary: string;
   primaryLight: string;
+  // Tint background + foreground for icon chips (quick-action cards etc.).
+  // iconChipBg is intentionally a touch darker than primaryLight so that
+  // thin glyph icons (e.g. the stopwatch ⏱) keep enough contrast in light
+  // mode; iconChipFg is the explicit glyph color for those non-emoji icons.
+  iconChipBg: string;
+  iconChipFg: string;
   danger: string;
   dangerLight: string;
   warning: string;
@@ -35,6 +41,8 @@ const lightTheme: ThemeColors = {
   borderLight: '#F3F4F6',
   primary: '#3B82F6',
   primaryLight: '#EFF6FF',
+  iconChipBg: '#DBEAFE',  // blue-100 — darker than primaryLight for contrast
+  iconChipFg: '#1D4ED8',  // blue-700 — explicit color for thin glyph icons
   danger: '#EF4444',
   dangerLight: '#FEE2E2',
   warning: '#FEF3C7',
@@ -52,6 +60,8 @@ const darkTheme: ThemeColors = {
   borderLight: '#4B5563',
   primary: '#3B82F6',
   primaryLight: '#1E3A5F',
+  iconChipBg: '#1E3A5F',  // unchanged dark-mode tint — already reads fine
+  iconChipFg: '#93C5FD',  // blue-300 — light glyph color for dark surfaces
   danger: '#EF4444',
   dangerLight: '#7F1D1D',
   warning: '#78350F',

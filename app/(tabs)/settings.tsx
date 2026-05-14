@@ -96,7 +96,7 @@ export default function SettingsScreen() {
       // user's timezone (matches the day the user tapped "export").
       const now = new Date();
       const fileDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const fileName = `zekra-vardiya-${fileDate}.csv`;
+      const fileName = `vardiya-plani-${fileDate}.csv`;
       const file = new ExpoFile(Paths.cache, fileName);
       file.write(csvContent);
       const filePath = file.uri;
@@ -359,16 +359,21 @@ export default function SettingsScreen() {
           </Text>
           <View style={[styles.card, styles.aboutCard, { backgroundColor: colors.surface }]}>
             <View style={styles.aboutHeader}>
-              <Text style={[styles.aboutBrand, { color: colors.text }]}>Zekra</Text>
+              <Text style={[styles.aboutBrand, { color: colors.text }]}>
+                Vardiya Planı
+              </Text>
               <Text style={[styles.aboutVersion, { color: colors.textSecondary }]}>
-                Sürüm 1.0.2
+                Sürüm 1.2.4
               </Text>
             </View>
+            <Text style={[styles.aboutMaker, { color: colors.textMuted }]}>
+              Demrivo tarafından geliştirildi
+            </Text>
 
             <View style={[styles.aboutDivider, { backgroundColor: colors.border }]} />
 
             <Text style={[styles.aboutLine, styles.aboutLinePrimary, { color: colors.text }]}>
-              <Text style={styles.aboutLineLabel}>Geliştiren: </Text>
+              <Text style={styles.aboutLineLabel}>Geliştirici: </Text>
               Muhammed Esat Demir
             </Text>
             <Text style={[styles.aboutLine, { color: colors.textSecondary }]}>
@@ -745,6 +750,12 @@ const styles = StyleSheet.create({
   aboutVersion: {
     fontSize: 12,
     fontWeight: '500',
+    opacity: 0.85,
+  },
+  aboutMaker: {
+    fontSize: 12,
+    fontWeight: '400',
+    marginTop: 3,
     opacity: 0.85,
   },
   aboutDivider: {

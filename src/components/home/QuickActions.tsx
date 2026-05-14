@@ -42,8 +42,8 @@ export function QuickActions({ actions }: QuickActionsProps) {
             pressedScale={0.97}
             rippleColor="rgba(59,130,246,0.10)"
           >
-            <View style={[styles.iconContainer, { backgroundColor: colors.primaryLight }]}>
-              <Text style={styles.icon}>{action.icon}</Text>
+            <View style={[styles.iconContainer, { backgroundColor: colors.iconChipBg }]}>
+              <Text style={[styles.icon, { color: colors.iconChipFg }]}>{action.icon}</Text>
             </View>
             <View style={styles.textContainer}>
               <Text style={[styles.label, { color: colors.text }]}>

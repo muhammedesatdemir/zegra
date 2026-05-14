@@ -25,41 +25,54 @@ interface DayCellProps {
   onPress: () => void;
 }
 
-// FINAL COLOR SYSTEM — calendar uses a soft variant of each shift's identity
-// color. Sabah is intentionally pushed into a stronger emerald tone so it
-// reads as clearly "green" next to Off's slate, since users were confusing
-// the two when sabah used the lighter mint shade.
-const SHIFT_BG_COLORS = {
-  S: '#BBF7D0',      // emerald-200 — stronger green for Sabah
-  Ö: '#FED7AA',      // Soft orange for Öğle - TURKISH Ö CHARACTER
-  G: '#DBEAFE',      // Soft blue for Gece
-  Off: '#E2E8F0',    // slate-200 — different hue family, no green tint
+// FINAL COLOR SYSTEM — calendar cells are filled with a saturated, solid
+// shift color so the four shift kinds (S / Ö / G / Off) are unmistakable in
+// the small month-view cells. Sabah (green) and Gece (blue) were previously
+// using pale tints that blended into each other and into Off's slate; they
+// are now deep, fully-saturated tones with white text. Light and dark mode
+// get separate values so each stays vivid against its own surface.
+const SHIFT_BG_COLORS_LIGHT = {
+  S: '#16A34A',      // emerald-600 — deep saturated green for Sabah
+  Ö: '#F97316',      // orange-500 for Öğle - TURKISH Ö CHARACTER
+  G: '#2563EB',      // blue-600 — deep saturated blue for Gece
+  Off: '#94A3B8',    // slate-400 — clearly different hue family from green
 } as const;
 
+const SHIFT_BG_COLORS_DARK = {
+  S: '#15803D',      // emerald-700 — slightly deeper so it isn't glaring on dark
+  Ö: '#EA580C',      // orange-600 for Öğle - TURKISH Ö CHARACTER
+  G: '#1D4ED8',      // blue-700 — deep blue, clearly apart from green on dark
+  Off: '#64748B',    // slate-500 — muted, distinct from the working shifts
+} as const;
+
+// All filled cells use light text since backgrounds are now saturated.
 const SHIFT_TEXT_COLORS = {
-  S: '#14532D',      // emerald-900 — strong contrast over BBF7D0
-  Ö: '#C2410C',      // Dark orange - TURKISH Ö CHARACTER
-  G: '#1D4ED8',      // Dark blue
-  Off: '#475569',    // slate-600
+  S: '#FFFFFF',
+  Ö: '#FFFFFF',
+  G: '#FFFFFF',
+  Off: '#FFFFFF',
 } as const;
 
-type ShiftColorKey = keyof typeof SHIFT_BG_COLORS;
+type ShiftColorKey = keyof typeof SHIFT_BG_COLORS_LIGHT;
 
-// Get colors - prefer shift type's native color, fallback to our premium palette
+// Get colors - prefer our premium palette, fallback to shift type's own color
 function getShiftColors(
-  shiftType: ShiftType | null
+  shiftType: ShiftType | null,
+  isDark: boolean
 ): { bg: string; text: string } {
+  const bgPalette = isDark ? SHIFT_BG_COLORS_DARK : SHIFT_BG_COLORS_LIGHT;
+
   if (!shiftType) {
-    return { bg: '#F9FAFB', text: '#9CA3AF' };
+    return { bg: isDark ? '#1F2937' : '#F9FAFB', text: '#9CA3AF' };
   }
 
   const shortName = shiftType.shortName;
 
   // Check our premium color palette first (handles S, Ö, G, Off)
-  if (shortName && shortName in SHIFT_BG_COLORS) {
+  if (shortName && shortName in bgPalette) {
     const key = shortName as ShiftColorKey;
     return {
-      bg: SHIFT_BG_COLORS[key],
+      bg: bgPalette[key],
       text: SHIFT_TEXT_COLORS[key],
     };
   }
@@ -67,17 +80,16 @@ function getShiftColors(
   // Check for Off variants
   if (shortName?.toLowerCase().includes('off')) {
     return {
-      bg: SHIFT_BG_COLORS.Off,
+      bg: bgPalette.Off,
       text: SHIFT_TEXT_COLORS.Off,
     };
   }
 
-  // Fallback: use shift type's own color with calculated contrast
-  // Create soft background from shift's color
+  // Fallback: use shift type's own (saturated) color with white text
   const baseColor = shiftType.color || '#9CA3AF';
   return {
-    bg: baseColor + '20', // 12% opacity version
-    text: baseColor,
+    bg: baseColor,
+    text: '#FFFFFF',
   };
 }
 
@@ -113,7 +125,7 @@ export function DayCell({
   const hasShift = Boolean(shiftType);
 
   // Get colors based on shift type
-  const shiftColors = getShiftColors(shiftType);
+  const shiftColors = getShiftColors(shiftType, isDark);
 
   return (
     <View style={[styles.cellWrapper, { width: cellSize, height: cellSize * 1.15 }]}>
@@ -166,9 +178,12 @@ export function DayCell({
         <Text
           style={[
             styles.dayNumber,
-            { color: hasShift ? shiftColors.text : colors.textSecondary },
             isToday && styles.todayNumber,
             !hasShift && styles.emptyDayNumber,
+            // Color comes last so a filled (saturated) cell always keeps its
+            // white text, even on today — todayNumber's blue is only for
+            // empty cells where it reads against the surface.
+            { color: hasShift ? shiftColors.text : (isToday ? '#2563EB' : colors.textSecondary) },
           ]}
         >
           {day}
@@ -187,7 +202,7 @@ export function DayCell({
 
         {/* Shift Label */}
         {hasShift ? (
-          <View style={[styles.shiftLabel, { backgroundColor: 'rgba(0,0,0,0.06)' }]}>
+          <View style={[styles.shiftLabel, { backgroundColor: 'rgba(255,255,255,0.22)' }]}>
             <Text
               style={[styles.shiftText, { color: shiftColors.text }]}
               numberOfLines={1}
@@ -308,7 +323,6 @@ const styles = StyleSheet.create({
     }),
   },
   todayNumber: {
-    color: '#2563EB',
     fontWeight: '700',
   },
   emptyDayNumber: {

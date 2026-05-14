@@ -24,6 +24,7 @@ import { getHolidayName } from '../../src/constants/holidays';
 import { normalizeCustomTime } from '../../src/utils/shiftTime';
 import { hmToMinutes, minutesToHM } from '../../src/utils/duration';
 import { useTheme } from '../../src/context';
+import { TimeInput, normalizeTimeString } from '../../src/components/ui';
 import type { PlannedDay } from '../../src/types';
 
 export default function DayEditScreen() {
@@ -118,13 +119,16 @@ export default function DayEditScreen() {
       return;
     }
 
-    // Normalize custom times - don't store if same as default
+    // Custom times come from TimeInput as "HH:mm" (or a partial like "07:"
+    // while mid-edit). Run them through normalizeTimeString first so partial
+    // or invalid entries are discarded (→ falls back to the shift default),
+    // then normalizeCustomTime drops anything equal to the default.
     const normalizedStart = normalizeCustomTime(
-      customStartTime.trim(),
+      normalizeTimeString(customStartTime) ?? '',
       selectedShiftType?.startTime ?? null
     );
     const normalizedEnd = normalizeCustomTime(
-      customEndTime.trim(),
+      normalizeTimeString(customEndTime) ?? '',
       selectedShiftType?.endTime ?? null
     );
 
@@ -280,17 +284,17 @@ export default function DayEditScreen() {
                 <Text style={[styles.timeLabel, { color: colors.textSecondary }]}>
                   Başlangıç
                 </Text>
-                <TextInput
-                  style={[
-                    styles.timeInput,
-                    { backgroundColor: colors.surfaceSecondary, color: colors.text },
-                  ]}
+                <TimeInput
                   value={customStartTime}
-                  onChangeText={setCustomStartTime}
-                  placeholder={selectedShiftType.startTime ?? '00:00'}
-                  placeholderTextColor={colors.textMuted}
-                  keyboardType="numbers-and-punctuation"
-                  maxLength={5}
+                  onChangeValue={setCustomStartTime}
+                  accentColor={selectedShiftType.color}
+                  colors={colors}
+                  placeholderHours={
+                    selectedShiftType.startTime?.slice(0, 2) ?? '00'
+                  }
+                  placeholderMinutes={
+                    selectedShiftType.startTime?.slice(3, 5) ?? '00'
+                  }
                 />
               </View>
               <Text style={[styles.timeSeparator, { color: colors.textMuted }]}>–</Text>
@@ -298,17 +302,17 @@ export default function DayEditScreen() {
                 <Text style={[styles.timeLabel, { color: colors.textSecondary }]}>
                   Bitiş
                 </Text>
-                <TextInput
-                  style={[
-                    styles.timeInput,
-                    { backgroundColor: colors.surfaceSecondary, color: colors.text },
-                  ]}
+                <TimeInput
                   value={customEndTime}
-                  onChangeText={setCustomEndTime}
-                  placeholder={selectedShiftType.endTime ?? '00:00'}
-                  placeholderTextColor={colors.textMuted}
-                  keyboardType="numbers-and-punctuation"
-                  maxLength={5}
+                  onChangeValue={setCustomEndTime}
+                  accentColor={selectedShiftType.color}
+                  colors={colors}
+                  placeholderHours={
+                    selectedShiftType.endTime?.slice(0, 2) ?? '00'
+                  }
+                  placeholderMinutes={
+                    selectedShiftType.endTime?.slice(3, 5) ?? '00'
+                  }
                 />
               </View>
             </View>
@@ -762,21 +766,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 6,
   },
-  timeInput: {
-    padding: 12,
-    borderRadius: 10,
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-    ...Platform.select({
-      ios: { fontFamily: 'System' },
-      android: { fontFamily: 'sans-serif-medium' },
-    }),
-  },
   timeSeparator: {
     fontSize: 18,
     fontWeight: '500',
-    marginTop: 18,
+    // Offsets the label height above each TimeInput box so the dash lines
+    // up with the input fields rather than the labels.
+    marginTop: 40,
   },
   resetTimesButton: {
     marginTop: 10,

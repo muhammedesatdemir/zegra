@@ -22,13 +22,12 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useScheduleStore } from '../src/stores';
 import { useTheme } from '../src/context';
-import { PressableScale } from '../src/components/ui';
+import { PressableScale, TimeInput } from '../src/components/ui';
 import { DEFAULT_SHIFT_TYPES } from '../src/constants/shifts';
 import { formatHM, isOvernightFromHM, parseHM } from '../src/utils/shiftTime';
 import type { ShiftType } from '../src/types';
@@ -217,10 +216,10 @@ function ShiftTimeEditor({ shift, onClose, onSave }: ShiftTimeEditorProps) {
 
   const visible = shift !== null;
 
-  const [startH, setStartH] = useState('');
-  const [startM, setStartM] = useState('');
-  const [endH, setEndH] = useState('');
-  const [endM, setEndM] = useState('');
+  // Held as "HH:mm" strings (matching the shared TimeInput contract). May be
+  // partial (e.g. "07:") mid-edit; buildHM / parseHM tolerate that.
+  const [start, setStart] = useState('');
+  const [end, setEnd] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   // The iOS KeyboardAvoidingView in this modal historically did not lift
@@ -254,12 +253,10 @@ function ShiftTimeEditor({ shift, onClose, onSave }: ShiftTimeEditorProps) {
   // Hydrate fields when a shift is selected.
   useEffect(() => {
     if (!shift) return;
-    const start = parseHM(shift.startTime ?? '');
-    const end = parseHM(shift.endTime ?? '');
-    setStartH(start ? String(start.hours).padStart(2, '0') : '');
-    setStartM(start ? String(start.minutes).padStart(2, '0') : '');
-    setEndH(end ? String(end.hours).padStart(2, '0') : '');
-    setEndM(end ? String(end.minutes).padStart(2, '0') : '');
+    const parsedStart = parseHM(shift.startTime ?? '');
+    const parsedEnd = parseHM(shift.endTime ?? '');
+    setStart(parsedStart ? formatHM(parsedStart.hours, parsedStart.minutes) : '');
+    setEnd(parsedEnd ? formatHM(parsedEnd.hours, parsedEnd.minutes) : '');
     setError(null);
   }, [shift]);
 
@@ -302,15 +299,18 @@ function ShiftTimeEditor({ shift, onClose, onSave }: ShiftTimeEditorProps) {
 
   const tintBg = isDark ? `${shift.color}26` : `${shift.color}1A`;
 
-  const buildHM = (h: string, m: string): string | null => {
+  // The shared TimeInput emits "HH:mm" (possibly partial, e.g. "07:"). parseHM
+  // tolerates a single-digit side; treat a missing side as 0 so "07:" → 07:00.
+  const buildHM = (value: string): string | null => {
+    const [h = '', m = ''] = value.split(':');
     const parsed = parseHM(`${h || '0'}:${m || '0'}`);
     if (!parsed) return null;
     return formatHM(parsed.hours, parsed.minutes);
   };
 
   const handleSave = () => {
-    const startStr = buildHM(startH, startM);
-    const endStr = buildHM(endH, endM);
+    const startStr = buildHM(start);
+    const endStr = buildHM(end);
 
     if (!startStr || !endStr) {
       setError('Saatleri 00–23, dakikaları 00–59 aralığında girin.');
@@ -334,13 +334,11 @@ function ShiftTimeEditor({ shift, onClose, onSave }: ShiftTimeEditorProps) {
   const handleResetDefaults = () => {
     const defaults = DEFAULT_SHIFT_TYPES.find((d) => d.code === shift.code);
     if (!defaults || !defaults.startTime || !defaults.endTime) return;
-    const start = parseHM(defaults.startTime);
-    const end = parseHM(defaults.endTime);
-    if (!start || !end) return;
-    setStartH(String(start.hours).padStart(2, '0'));
-    setStartM(String(start.minutes).padStart(2, '0'));
-    setEndH(String(end.hours).padStart(2, '0'));
-    setEndM(String(end.minutes).padStart(2, '0'));
+    const parsedStart = parseHM(defaults.startTime);
+    const parsedEnd = parseHM(defaults.endTime);
+    if (!parsedStart || !parsedEnd) return;
+    setStart(formatHM(parsedStart.hours, parsedStart.minutes));
+    setEnd(formatHM(parsedEnd.hours, parsedEnd.minutes));
     setError(null);
   };
 
@@ -431,14 +429,9 @@ function ShiftTimeEditor({ shift, onClose, onSave }: ShiftTimeEditorProps) {
               <TimeField
                 label="Başlangıç"
                 accentColor={shift.color}
-                hours={startH}
-                minutes={startM}
-                onHoursChange={(v) => {
-                  setStartH(v);
-                  setError(null);
-                }}
-                onMinutesChange={(v) => {
-                  setStartM(v);
+                value={start}
+                onChangeValue={(v) => {
+                  setStart(v);
                   setError(null);
                 }}
                 colors={colors}
@@ -462,14 +455,9 @@ function ShiftTimeEditor({ shift, onClose, onSave }: ShiftTimeEditorProps) {
               <TimeField
                 label="Bitiş"
                 accentColor={shift.color}
-                hours={endH}
-                minutes={endM}
-                onHoursChange={(v) => {
-                  setEndH(v);
-                  setError(null);
-                }}
-                onMinutesChange={(v) => {
-                  setEndM(v);
+                value={end}
+                onChangeValue={(v) => {
+                  setEnd(v);
                   setError(null);
                 }}
                 colors={colors}
@@ -554,85 +542,40 @@ function ShiftTimeEditor({ shift, onClose, onSave }: ShiftTimeEditorProps) {
 }
 
 // ============================================
-// TIME FIELD (HH + MM)
+// TIME FIELD — label + hint wrapper around the shared TimeInput
 // ============================================
 
 interface TimeFieldProps {
   label: string;
   accentColor: string;
-  hours: string;
-  minutes: string;
-  onHoursChange: (value: string) => void;
-  onMinutesChange: (value: string) => void;
+  value: string;
+  onChangeValue: (value: string) => void;
   colors: ReturnType<typeof useTheme>['colors'];
 }
 
 function TimeField({
   label,
   accentColor,
-  hours,
-  minutes,
-  onHoursChange,
-  onMinutesChange,
+  value,
+  onChangeValue,
   colors,
 }: TimeFieldProps) {
-  const [focused, setFocused] = useState<'h' | 'm' | null>(null);
-
-  // Strip non-digits, clamp length to 2.
-  const sanitize = (raw: string) => raw.replace(/[^0-9]/g, '').slice(0, 2);
-
   return (
     <View style={editorStyles.field}>
       <Text style={[editorStyles.fieldLabel, { color: colors.textMuted }]}>
         {label}
       </Text>
-      <View
-        style={[
-          editorStyles.fieldBox,
-          {
-            backgroundColor: colors.surfaceSecondary,
-            borderColor:
-              focused !== null ? accentColor : 'transparent',
-          },
-        ]}
-      >
-        <TextInput
-          style={[editorStyles.digitInput, { color: colors.text }]}
-          value={hours}
-          onChangeText={(v) => onHoursChange(sanitize(v))}
-          onFocus={() => setFocused('h')}
-          onBlur={() => setFocused(null)}
-          placeholder="00"
-          placeholderTextColor={colors.textMuted}
-          keyboardType="number-pad"
-          maxLength={2}
-          selectTextOnFocus
-        />
-        <Text style={[editorStyles.digitSeparator, { color: colors.textMuted }]}>
-          :
-        </Text>
-        <TextInput
-          style={[editorStyles.digitInput, { color: colors.text }]}
-          value={minutes}
-          onChangeText={(v) => onMinutesChange(sanitize(v))}
-          onFocus={() => setFocused('m')}
-          onBlur={() => setFocused(null)}
-          placeholder="00"
-          placeholderTextColor={colors.textMuted}
-          keyboardType="number-pad"
-          maxLength={2}
-          selectTextOnFocus
-        />
-      </View>
+      <TimeInput
+        value={value}
+        onChangeValue={onChangeValue}
+        accentColor={accentColor}
+        colors={colors}
+      />
       <View style={editorStyles.fieldHintRow}>
-        <Text
-          style={[editorStyles.fieldHint, { color: colors.textMuted }]}
-        >
+        <Text style={[editorStyles.fieldHint, { color: colors.textMuted }]}>
           SS
         </Text>
-        <Text
-          style={[editorStyles.fieldHint, { color: colors.textMuted }]}
-        >
+        <Text style={[editorStyles.fieldHint, { color: colors.textMuted }]}>
           DD
         </Text>
       </View>
@@ -899,30 +842,6 @@ const editorStyles = StyleSheet.create({
     letterSpacing: 0.4,
     textTransform: 'uppercase',
     marginLeft: 4,
-  },
-  fieldBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 14,
-    borderWidth: 2,
-    gap: 4,
-  },
-  digitInput: {
-    fontSize: 28,
-    fontWeight: '700',
-    fontVariant: ['tabular-nums'],
-    letterSpacing: -0.5,
-    width: 52,
-    textAlign: 'center',
-    padding: 0,
-  },
-  digitSeparator: {
-    fontSize: 26,
-    fontWeight: '700',
-    marginTop: -3,
   },
   fieldHintRow: {
     flexDirection: 'row',
